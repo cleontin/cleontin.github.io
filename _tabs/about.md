@@ -11,7 +11,7 @@ My name is Leontin Chiru. I am a network engineer. I like to learn new things ab
 I usually try to understand how everything is working and why.
 
 I have almost 20 years of experience working in IT, mostly with networks devices and protocols but also programming, automation, databases, etc.
-I learned a lot during theses years, but I have little experience in writing down my ideas.
+I learned a lot during theses years but I have little experience in writing down my ideas.
 
 This site will mainly be my exercise for writing, and I hope it will be useful for anyone reading it.
 I will start with a few easy topics but I want to move on to more advanced ones.
