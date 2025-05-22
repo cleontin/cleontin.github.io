@@ -1,1 +1,222 @@
-<feed xmlns="http://www.w3.org/2005/Atom"> <id>https://www.leontin.eu/</id><title>Leontin Chiru</title><subtitle>A collection of posts about network related tools, snippets, RFCs, etc. The plan is to have short posts in a cheat-sheet style, while also explaining thouroughly the options used</subtitle> <updated>2021-08-20T00:41:03+03:00</updated> <author> <name>Leontin Chiru</name> <uri>https://www.leontin.eu/</uri> </author><link rel="self" type="application/atom+xml" href="https://www.leontin.eu/feed.xml"/><link rel="alternate" type="text/html" hreflang="en" href="https://www.leontin.eu/"/> <generator uri="https://jekyllrb.com/" version="4.2.0">Jekyll</generator> <rights> © 2021 Leontin Chiru </rights> <icon>/assets/img/favicons/favicon.ico</icon> <logo>/assets/img/favicons/favicon-96x96.png</logo> <entry><title>Checking the docker bridge networks</title><link href="https://www.leontin.eu/posts/docker-bridge-networks/" rel="alternate" type="text/html" title="Checking the docker bridge networks" /><published>2021-08-19T00:00:00+03:00</published> <updated>2021-08-19T00:00:00+03:00</updated> <id>https://www.leontin.eu/posts/docker-bridge-networks/</id> <content src="https://www.leontin.eu/posts/docker-bridge-networks/" /> <author> <name>Leontin Chiru</name> </author> <category term="Howtos" /> <summary> This is just for fun and practice. Let’s take a look at how docker implements the bridge networks. The environment I am using the same VM as before, running Ubuntu. I have docker installed with one container already running (jenkins, used for previous posts). To make it more interesting, I’m starting a second container running busybox. I will only look at standard linux commands on the host ... </summary> </entry> <entry><title>Checking more file descriptors</title><link href="https://www.leontin.eu/posts/more-file-descriptors/" rel="alternate" type="text/html" title="Checking more file descriptors" /><published>2021-08-11T00:00:00+03:00</published> <updated>2021-08-11T00:00:00+03:00</updated> <id>https://www.leontin.eu/posts/more-file-descriptors/</id> <content src="https://www.leontin.eu/posts/more-file-descriptors/" /> <author> <name>Leontin Chiru</name> </author> <category term="Howtos" /> <summary> In the previous post we looked at how to check network connections for a particular process from the /proc filesystem. Now let’s take a look at the other file descriptors and see what information we can get from them. I will be using the same environment as before and I am going to run all commands inside the Jenkins container. Because the jenkins process has process id 6, all information rela... </summary> </entry> <entry><title>How to get process socket information from /proc</title><link href="https://www.leontin.eu/posts/check-file-descriptors/" rel="alternate" type="text/html" title="How to get process socket information from /proc" /><published>2021-08-10T00:00:00+03:00</published> <updated>2021-08-10T00:00:00+03:00</updated> <id>https://www.leontin.eu/posts/check-file-descriptors/</id> <content src="https://www.leontin.eu/posts/check-file-descriptors/" /> <author> <name>Leontin Chiru</name> </author> <category term="Howtos" /> <summary> When I want to see the connections opened by some process I normally use commands like lsof and ss. But these commands are not always available. In these scenarios, I found that it’s not that difficult to obtain the same information from the /proc filesystem. I will show here how this can be done by first checking the output from lsof and ss, then finding the same information from the proc fil... </summary> </entry> <entry><title>How to test if a port is open and accessible</title><link href="https://www.leontin.eu/posts/test-ports/" rel="alternate" type="text/html" title="How to test if a port is open and accessible" /><published>2021-07-20T00:00:00+03:00</published> <updated>2021-07-20T00:00:00+03:00</updated> <id>https://www.leontin.eu/posts/test-ports/</id> <content src="https://www.leontin.eu/posts/test-ports/" /> <author> <name>Leontin Chiru</name> </author> <category term="Howtos" /> <summary> Many times while troubleshooting, we need to test if the network connection to a specific service is working or not. The result from such a test can show if I’m dealing with a problem on the network side or if there’s something wrong with the service. This can be tested for both TCP and UDP ports, but since UDP doesn’t have the mechanism for reliable delivery, we cannot easily differentiate be... </summary> </entry> </feed>
+
+
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>https://www.leontin.eu/</id>
+  <title>Leontin Chiru</title>
+  <subtitle>A collection of posts about network related tools, snippets, RFCs, etc. The plan is to have short posts in a cheat-sheet style, while also explaining thouroughly the options used</subtitle>
+  <updated>2025-05-22T15:26:21+03:00</updated>
+  <author>
+    <name>Leontin Chiru</name>
+    <uri>https://www.leontin.eu/</uri>
+  </author>
+  <link rel="self" type="application/atom+xml" href="https://www.leontin.eu/feed.xml"/>
+  <link rel="alternate" type="text/html" hreflang="en"
+    href="https://www.leontin.eu/"/>
+  <generator uri="https://jekyllrb.com/" version="4.2.0">Jekyll</generator>
+  <rights> © 2025 Leontin Chiru </rights>
+  <icon>/assets/img/favicons/favicon.ico</icon>
+  <logo>/assets/img/favicons/favicon-96x96.png</logo>
+
+
+  
+  <entry>
+    <title>Hayward heat pump - connecting to ESPHome and HomeAssistant</title>
+    <link href="https://www.leontin.eu/posts/hayward/" rel="alternate" type="text/html" title="Hayward heat pump - connecting to ESPHome and HomeAssistant" />
+    <published>2025-05-21T00:00:00+03:00</published>
+  
+    <updated>2025-05-21T00:00:00+03:00</updated>
+  
+    <id>https://www.leontin.eu/posts/hayward/</id>
+    <content src="https://www.leontin.eu/posts/hayward/" />
+    <author>
+      <name>Leontin Chiru</name>
+    </author>
+
+  
+    
+    <category term="Howtos" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      The Reason
+
+I’ve been hooked on HomeAssistant for a while now, tinkering with all sorts of gadgets—smart plugs, lights, solar inverters, car chargers, you name it. Most of these were a breeze to set up in HomeAssistant. Even the trickier ones, like soldering circuit boards and flashing ESPHome with custom code, weren’t too bad because someone in the community had already paved the way with thei...
+    </summary>
+  
+
+  </entry>
+
+  
+  <entry>
+    <title>Checking the docker bridge networks</title>
+    <link href="https://www.leontin.eu/posts/docker-bridge-networks/" rel="alternate" type="text/html" title="Checking the docker bridge networks" />
+    <published>2021-08-19T00:00:00+03:00</published>
+  
+    <updated>2021-08-19T00:00:00+03:00</updated>
+  
+    <id>https://www.leontin.eu/posts/docker-bridge-networks/</id>
+    <content src="https://www.leontin.eu/posts/docker-bridge-networks/" />
+    <author>
+      <name>Leontin Chiru</name>
+    </author>
+
+  
+    
+    <category term="Howtos" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      This is just for fun and practice. Let’s take a look at how docker implements
+the bridge networks.
+
+The environment
+
+I am using the same VM as before, running Ubuntu. I have docker installed with
+one container already running (jenkins, used for previous posts). To make it
+more interesting, I’m starting a second container running busybox.
+
+I will only look at standard linux commands on the host ...
+    </summary>
+  
+
+  </entry>
+
+  
+  <entry>
+    <title>Checking more file descriptors</title>
+    <link href="https://www.leontin.eu/posts/more-file-descriptors/" rel="alternate" type="text/html" title="Checking more file descriptors" />
+    <published>2021-08-11T00:00:00+03:00</published>
+  
+    <updated>2021-08-11T00:00:00+03:00</updated>
+  
+    <id>https://www.leontin.eu/posts/more-file-descriptors/</id>
+    <content src="https://www.leontin.eu/posts/more-file-descriptors/" />
+    <author>
+      <name>Leontin Chiru</name>
+    </author>
+
+  
+    
+    <category term="Howtos" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      In the previous post we looked at how to check network connections for a
+particular process from the /proc filesystem. Now let’s take a look at the
+other file descriptors and see what information we can get from them.
+
+I will be using the same environment as before and I am going to run all
+commands inside the Jenkins container. Because the jenkins process has process
+id 6, all information rela...
+    </summary>
+  
+
+  </entry>
+
+  
+  <entry>
+    <title>How to get process socket information from /proc</title>
+    <link href="https://www.leontin.eu/posts/check-file-descriptors/" rel="alternate" type="text/html" title="How to get process socket information from /proc" />
+    <published>2021-08-10T00:00:00+03:00</published>
+  
+    <updated>2021-08-10T00:00:00+03:00</updated>
+  
+    <id>https://www.leontin.eu/posts/check-file-descriptors/</id>
+    <content src="https://www.leontin.eu/posts/check-file-descriptors/" />
+    <author>
+      <name>Leontin Chiru</name>
+    </author>
+
+  
+    
+    <category term="Howtos" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      When I want to see the connections opened by some process I normally use
+commands like lsof and ss. But these commands are not always available.
+In these scenarios, I found that it’s not that difficult to obtain the same
+information from the /proc filesystem.
+
+I will show here how this can be done by first checking the output from lsof
+and ss, then finding the same information from the proc fil...
+    </summary>
+  
+
+  </entry>
+
+  
+  <entry>
+    <title>How to test if a port is open and accessible</title>
+    <link href="https://www.leontin.eu/posts/test-ports/" rel="alternate" type="text/html" title="How to test if a port is open and accessible" />
+    <published>2021-07-20T00:00:00+03:00</published>
+  
+    <updated>2021-07-20T00:00:00+03:00</updated>
+  
+    <id>https://www.leontin.eu/posts/test-ports/</id>
+    <content src="https://www.leontin.eu/posts/test-ports/" />
+    <author>
+      <name>Leontin Chiru</name>
+    </author>
+
+  
+    
+    <category term="Howtos" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      Many times while troubleshooting, we need to test if the network connection to a
+specific service is working or not. The result from such a test can show if I’m
+dealing with a problem on the network side or if there’s something wrong with
+the service.
+
+This can be tested for both TCP and UDP ports, but since UDP doesn’t have the
+mechanism for reliable delivery, we cannot easily differentiate be...
+    </summary>
+  
+
+  </entry>
+
+</feed>
+
+

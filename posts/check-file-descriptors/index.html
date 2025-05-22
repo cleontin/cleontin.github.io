@@ -1,14 +1,618 @@
-<!DOCTYPE html><html lang="en" ><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><meta name="day-prompt" content="days ago"><meta name="hour-prompt" content="hours ago"><meta name="minute-prompt" content="minutes ago"><meta name="justnow-prompt" content="just now"><meta name="generator" content="Jekyll v4.2.0" /><meta property="og:title" content="How to get process socket information from /proc" /><meta property="og:locale" content="en" /><meta name="description" content="When I want to see the connections opened by some process I normally use commands like lsof and ss. But these commands are not always available. In these scenarios, I found that it’s not that difficult to obtain the same information from the /proc filesystem." /><meta property="og:description" content="When I want to see the connections opened by some process I normally use commands like lsof and ss. But these commands are not always available. In these scenarios, I found that it’s not that difficult to obtain the same information from the /proc filesystem." /><link rel="canonical" href="https://www.leontin.eu/posts/check-file-descriptors/" /><meta property="og:url" content="https://www.leontin.eu/posts/check-file-descriptors/" /><meta property="og:site_name" content="Leontin Chiru" /><meta property="og:type" content="article" /><meta property="article:published_time" content="2021-08-10T00:00:00+03:00" /><meta name="twitter:card" content="summary" /><meta property="twitter:title" content="How to get process socket information from /proc" /><meta name="twitter:site" content="@twitter_username" /><meta name="google-site-verification" content="google_meta_tag_verification" /> <script type="application/ld+json"> {"headline":"How to get process socket information from /proc","dateModified":"2021-08-10T00:00:00+03:00","datePublished":"2021-08-10T00:00:00+03:00","description":"When I want to see the connections opened by some process I normally use commands like lsof and ss. But these commands are not always available. In these scenarios, I found that it’s not that difficult to obtain the same information from the /proc filesystem.","url":"https://www.leontin.eu/posts/check-file-descriptors/","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.leontin.eu/posts/check-file-descriptors/"},"@context":"https://schema.org"}</script><title>How to get process socket information from /proc | Leontin Chiru</title><link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png"><link rel="manifest" href="/assets/img/favicons/site.webmanifest"><link rel="shortcut icon" href="/assets/img/favicons/favicon.ico"><meta name="apple-mobile-web-app-title" content="Leontin Chiru"><meta name="application-name" content="Leontin Chiru"><meta name="msapplication-TileColor" content="#da532c"><meta name="msapplication-config" content="/assets/img/favicons/browserconfig.xml"><meta name="theme-color" content="#ffffff"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"><link rel="dns-prefetch" href="https://fonts.gstatic.com"><link rel="preconnect" href="https://www.google-analytics.com" crossorigin="use-credentials"><link rel="dns-prefetch" href="https://www.google-analytics.com"><link rel="preconnect" href="https://www.googletagmanager.com" crossorigin="anonymous"><link rel="dns-prefetch" href="https://www.googletagmanager.com"><link rel="preconnect" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.11.2/css/all.min.css"><link rel="stylesheet" href="/assets/css/style.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/magnific-popup@1.1.0/dist/magnific-popup.min.css"> <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script><body data-spy="scroll" data-target="#toc"><div id="sidebar" class="d-flex flex-column align-items-end" lang=""><div class="profile-wrapper text-center"><div id="avatar"> <a href="/" alt="avatar" class="mx-auto"> <img src="/assets/me.png" alt="avatar" onerror="this.style.display='none'"> </a></div><div class="site-title mt-3"> <a href="/">Leontin Chiru</a></div><div class="site-subtitle font-italic">Snippets, cheat-sheets, explanations</div></div><ul class="w-100"><li class="nav-item"> <a href="/" class="nav-link"> <i class="fa-fw fas fa-home ml-xl-3 mr-xl-3 unloaded"></i> <span>HOME</span> </a><li class="nav-item"> <a href="/categories/" class="nav-link"> <i class="fa-fw fas fa-stream ml-xl-3 mr-xl-3 unloaded"></i> <span>CATEGORIES</span> </a><li class="nav-item"> <a href="/tags/" class="nav-link"> <i class="fa-fw fas fa-tags ml-xl-3 mr-xl-3 unloaded"></i> <span>TAGS</span> </a><li class="nav-item"> <a href="/archives/" class="nav-link"> <i class="fa-fw fas fa-archive ml-xl-3 mr-xl-3 unloaded"></i> <span>ARCHIVES</span> </a><li class="nav-item"> <a href="/about/" class="nav-link"> <i class="fa-fw fas fa-info ml-xl-3 mr-xl-3 unloaded"></i> <span>ABOUT</span> </a></ul><div class="sidebar-bottom mt-auto d-flex flex-wrap justify-content-center"> <a href="https://github.com/cleontin" aria-label="github" class="order-3" target="_blank" rel="noopener"> <i class="fab fa-github-alt"></i> </a> <a href="https://twitter.com/twitter_username" aria-label="twitter" class="order-4" target="_blank" rel="noopener"> <i class="fab fa-twitter"></i> </a> <a href=" javascript:location.href = 'mailto:' + ['cleontin','gmail.com'].join('@')" aria-label="email" class="order-5" > <i class="fas fa-envelope"></i> </a> <a href="/feed.xml" aria-label="rss" class="order-6" > <i class="fas fa-rss"></i> </a> <span class="icon-border order-2"></span> <span id="mode-toggle-wrapper" class="order-1"> <i class="mode-toggle fas fa-adjust"></i> <script type="text/javascript"> class ModeToggle { static get MODE_KEY() { return "mode"; } static get DARK_MODE() { return "dark"; } static get LIGHT_MODE() { return "light"; } constructor() { if (this.hasMode) { if (this.isDarkMode) { if (!this.isSysDarkPrefer) { this.setDark(); } } else { if (this.isSysDarkPrefer) { this.setLight(); } } } var self = this; /* always follow the system prefers */ this.sysDarkPrefers.addListener(function() { if (self.hasMode) { if (self.isDarkMode) { if (!self.isSysDarkPrefer) { self.setDark(); } } else { if (self.isSysDarkPrefer) { self.setLight(); } } self.clearMode(); } self.updateMermaid(); }); } /* constructor() */ setDark() { $('html').attr(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE); } setLight() { $('html').attr(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE); } clearMode() { $('html').removeAttr(ModeToggle.MODE_KEY); sessionStorage.removeItem(ModeToggle.MODE_KEY); } get sysDarkPrefers() { return window.matchMedia("(prefers-color-scheme: dark)"); } get isSysDarkPrefer() { return this.sysDarkPrefers.matches; } get isDarkMode() { return this.mode == ModeToggle.DARK_MODE; } get isLightMode() { return this.mode == ModeToggle.LIGHT_MODE; } get hasMode() { return this.mode != null; } get mode() { return sessionStorage.getItem(ModeToggle.MODE_KEY); } /* get the current mode on screen */ get modeStatus() { if (this.isDarkMode || (!this.hasMode && this.isSysDarkPrefer) ) { return ModeToggle.DARK_MODE; } else { return ModeToggle.LIGHT_MODE; } } updateMermaid() { if (typeof mermaid !== "undefined") { let expectedTheme = (this.modeStatus === ModeToggle.DARK_MODE? "dark" : "default"); let config = { theme: expectedTheme }; /* re-render the SVG › <https://github.com/mermaid-js/mermaid/issues/311#issuecomment-332557344> */ $(".mermaid").each(function() { let svgCode = $(this).prev().children().html(); $(this).removeAttr("data-processed"); $(this).html(svgCode); }); mermaid.initialize(config); mermaid.init(undefined, ".mermaid"); } } flipMode() { if (this.hasMode) { if (this.isSysDarkPrefer) { if (this.isLightMode) { this.clearMode(); } else { this.setLight(); } } else { if (this.isDarkMode) { this.clearMode(); } else { this.setDark(); } } } else { if (this.isSysDarkPrefer) { this.setLight(); } else { this.setDark(); } } this.updateMermaid(); } /* flipMode() */ } /* ModeToggle */ let toggle = new ModeToggle(); $(".mode-toggle").click(function() { toggle.flipMode(); }); </script> </span></div></div><div id="topbar-wrapper" class="row justify-content-center topbar-down"><div id="topbar" class="col-11 d-flex h-100 align-items-center justify-content-between"> <span id="breadcrumb"> <span> <a href="/"> Home </a> </span> <span>How to get process socket information from /proc</span> </span> <i id="sidebar-trigger" class="fas fa-bars fa-fw"></i><div id="topbar-title"> Post</div><i id="search-trigger" class="fas fa-search fa-fw"></i> <span id="search-wrapper" class="align-items-center"> <i class="fas fa-search fa-fw"></i> <input class="form-control" id="search-input" type="search" aria-label="search" autocomplete="off" placeholder="Search..."> <i class="fa fa-times-circle fa-fw" id="search-cleaner"></i> </span> <span id="search-cancel" >Cancel</span></div></div><div id="main-wrapper"><div id="main"><div class="row"><div id="post-wrapper" class="col-12 col-lg-11 col-xl-8"><div class="post pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4"><h1 data-toc-skip>How to get process socket information from /proc</h1><div class="post-meta text-muted d-flex flex-column"><div> <span class="semi-bold"> Leontin Chiru </span> on <span class="timeago " data-toggle="tooltip" data-placement="bottom" title="Tue, Aug 10, 2021, 12:00 AM +0300" >Aug 10<i class="unloaded">2021-08-10T00:00:00+03:00</i> </span></div><div> <span class="readtime" data-toggle="tooltip" data-placement="bottom" title="1573 words">8 min read</span></div></div><div class="post-content"><p>When I want to see the connections opened by some process I normally use commands like <code class="language-plaintext highlighter-rouge">lsof</code> and <code class="language-plaintext highlighter-rouge">ss</code>. But these commands are not always available. In these scenarios, I found that it’s not that difficult to obtain the same information from the <code class="language-plaintext highlighter-rouge">/proc</code> filesystem.</p><p>I will show here how this can be done by first checking the output from <code class="language-plaintext highlighter-rouge">lsof</code> and <code class="language-plaintext highlighter-rouge">ss</code>, then finding the same information from the <code class="language-plaintext highlighter-rouge">proc</code> filesystem.</p><h2 id="test-setup">Test setup</h2><p>For this test, I will start a Jenkins container. The container will have TCP port 8080 open, and I will access it from my browser to generate connections. The socket inodes and the port numbers will change during the tests, because the connections are not kept open for more than a few seconds.</p><p>We will be looking at the connections as seen from the host and from inside the container. We will see that network information fro inside the container is not directly available to commands running on the host. Also we will see that <code class="language-plaintext highlighter-rouge">lsof</code> is not available inside the container. Finally we will examine connection information by looking in the <code class="language-plaintext highlighter-rouge">/proc</code> filesystem inside the container.</p><h2 id="connections-as-seen-by-the-host">Connections as seen by the host</h2><p>First let’s find the id of the process as seen by the host:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+<!DOCTYPE html>
+
+
+
+<html lang="en" 
+  
+>
+
+  <!--
+  The Head
+-->
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  
+
+    <!-- i18n for timeago.js -->
+    <meta name="day-prompt" content="days ago">
+    <meta name="hour-prompt" content="hours ago">
+    <meta name="minute-prompt" content="minutes ago">
+    <meta name="justnow-prompt" content="just now">
+
+    
+
+    
+
+  
+
+  <!-- Begin Jekyll SEO tag v2.7.1 -->
+<meta name="generator" content="Jekyll v4.2.0" />
+<meta property="og:title" content="How to get process socket information from /proc" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="When I want to see the connections opened by some process I normally use commands like lsof and ss. But these commands are not always available. In these scenarios, I found that it’s not that difficult to obtain the same information from the /proc filesystem." />
+<meta property="og:description" content="When I want to see the connections opened by some process I normally use commands like lsof and ss. But these commands are not always available. In these scenarios, I found that it’s not that difficult to obtain the same information from the /proc filesystem." />
+<link rel="canonical" href="https://www.leontin.eu/posts/check-file-descriptors/" />
+<meta property="og:url" content="https://www.leontin.eu/posts/check-file-descriptors/" />
+<meta property="og:site_name" content="Leontin Chiru" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-08-10T00:00:00+03:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="How to get process socket information from /proc" />
+<meta name="twitter:site" content="@twitter_username" />
+<meta name="google-site-verification" content="google_meta_tag_verification" />
+<script type="application/ld+json">
+{"description":"When I want to see the connections opened by some process I normally use commands like lsof and ss. But these commands are not always available. In these scenarios, I found that it’s not that difficult to obtain the same information from the /proc filesystem.","@type":"BlogPosting","url":"https://www.leontin.eu/posts/check-file-descriptors/","headline":"How to get process socket information from /proc","dateModified":"2021-08-10T00:00:00+03:00","datePublished":"2021-08-10T00:00:00+03:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.leontin.eu/posts/check-file-descriptors/"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  <title>How to get process socket information from /proc | Leontin Chiru
+  </title>
+
+  <!--
+  The Favicons for Web, Android, Microsoft, and iOS (iPhone and iPad) Apps
+  Generated by: https://realfavicongenerator.net/
+-->
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png">
+<link rel="manifest" href="/assets/img/favicons/site.webmanifest">
+<link rel="shortcut icon" href="/assets/img/favicons/favicon.ico">
+<meta name="apple-mobile-web-app-title" content="Leontin Chiru">
+<meta name="application-name" content="Leontin Chiru">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="msapplication-config" content="/assets/img/favicons/browserconfig.xml">
+<meta name="theme-color" content="#ffffff">
+
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+  <!-- GA -->
+  
+
+  <!-- jsDelivr CDN -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.11.2/css/all.min.css">
+
+  <!--
+  CSS selector for site.
+-->
+
+<link rel="stylesheet" href="/assets/css/style.css">
+
+
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.css">
+
+
+
+  <!-- Manific Popup -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/magnific-popup@1.1.0/dist/magnific-popup.min.css">
+
+
+
+  <!-- JavaScript -->
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+
+</head>
+
+
+  <body data-spy="scroll" data-target="#toc">
+
+    <!--
+  The Side Bar
+-->
+
+<div id="sidebar" class="d-flex flex-column align-items-end" lang="">
+  <div class="profile-wrapper text-center">
+    <div id="avatar">
+      <a href="/" alt="avatar" class="mx-auto">
+        
+        <img src="/assets/me.png" alt="avatar" onerror="this.style.display='none'">
+      </a>
+    </div>
+
+    <div class="site-title mt-3">
+      <a href="/">Leontin Chiru</a>
+    </div>
+    <div class="site-subtitle font-italic">Snippets, cheat-sheets, explanations</div>
+
+  </div><!-- .profile-wrapper -->
+
+  <ul class="w-100">
+
+    <!-- home -->
+    <li class="nav-item">
+      <a href="/" class="nav-link">
+        <i class="fa-fw fas fa-home ml-xl-3 mr-xl-3 unloaded"></i>
+        <span>HOME</span>
+      </a>
+    </li>
+    <!-- the real tabs -->
+    
+    <li class="nav-item">
+      <a href="/categories/" class="nav-link">
+        <i class="fa-fw fas fa-stream ml-xl-3 mr-xl-3 unloaded"></i>
+        
+
+        <span>CATEGORIES</span>
+      </a>
+    </li> <!-- .nav-item -->
+    
+    <li class="nav-item">
+      <a href="/tags/" class="nav-link">
+        <i class="fa-fw fas fa-tags ml-xl-3 mr-xl-3 unloaded"></i>
+        
+
+        <span>TAGS</span>
+      </a>
+    </li> <!-- .nav-item -->
+    
+    <li class="nav-item">
+      <a href="/archives/" class="nav-link">
+        <i class="fa-fw fas fa-archive ml-xl-3 mr-xl-3 unloaded"></i>
+        
+
+        <span>ARCHIVES</span>
+      </a>
+    </li> <!-- .nav-item -->
+    
+    <li class="nav-item">
+      <a href="/about/" class="nav-link">
+        <i class="fa-fw fas fa-info ml-xl-3 mr-xl-3 unloaded"></i>
+        
+
+        <span>ABOUT</span>
+      </a>
+    </li> <!-- .nav-item -->
+    
+
+  </ul> <!-- ul.nav.flex-column -->
+
+  <div class="sidebar-bottom mt-auto d-flex flex-wrap justify-content-center">
+
+    
+      
+
+      
+      <a href="https://github.com/cleontin" aria-label="github"
+        class="order-3"
+        target="_blank" rel="noopener">
+        <i class="fab fa-github-alt"></i>
+      </a>
+      
+
+    
+      
+
+      
+      <a href="https://twitter.com/twitter_username" aria-label="twitter"
+        class="order-4"
+        target="_blank" rel="noopener">
+        <i class="fab fa-twitter"></i>
+      </a>
+      
+
+    
+      
+
+      
+      <a href="
+          javascript:location.href = 'mailto:' + ['cleontin','gmail.com'].join('@')" aria-label="email"
+        class="order-5"
+        >
+        <i class="fas fa-envelope"></i>
+      </a>
+      
+
+    
+      
+
+      
+      <a href="/feed.xml" aria-label="rss"
+        class="order-6"
+        >
+        <i class="fas fa-rss"></i>
+      </a>
+      
+
+    
+
+    
+      
+        <span class="icon-border order-2"></span>
+      
+
+      <span id="mode-toggle-wrapper" class="order-1">
+        <!--
+  Switch the mode between dark and light.
+-->
+
+<i class="mode-toggle fas fa-adjust"></i>
+
+<script type="text/javascript">
+
+  class ModeToggle {
+    static get MODE_KEY() { return "mode"; }
+    static get DARK_MODE() { return "dark"; }
+    static get LIGHT_MODE() { return "light"; }
+
+    constructor() {
+      if (this.hasMode) {
+        if (this.isDarkMode) {
+          if (!this.isSysDarkPrefer) {
+            this.setDark();
+          }
+        } else {
+          if (this.isSysDarkPrefer) {
+            this.setLight();
+          }
+        }
+      }
+
+      var self = this;
+
+      /* always follow the system prefers */
+      this.sysDarkPrefers.addListener(function() {
+        if (self.hasMode) {
+          if (self.isDarkMode) {
+            if (!self.isSysDarkPrefer) {
+              self.setDark();
+            }
+
+          } else {
+            if (self.isSysDarkPrefer) {
+              self.setLight();
+            }
+          }
+
+          self.clearMode();
+        }
+
+        self.updateMermaid();
+      });
+
+    } /* constructor() */
+
+
+    setDark() {
+      $('html').attr(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE);
+      sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE);
+    }
+
+    setLight() {
+      $('html').attr(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE);
+      sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE);
+    }
+
+    clearMode() {
+      $('html').removeAttr(ModeToggle.MODE_KEY);
+      sessionStorage.removeItem(ModeToggle.MODE_KEY);
+    }
+
+    get sysDarkPrefers() { return window.matchMedia("(prefers-color-scheme: dark)"); }
+
+    get isSysDarkPrefer() { return this.sysDarkPrefers.matches; }
+
+    get isDarkMode() { return this.mode == ModeToggle.DARK_MODE; }
+
+    get isLightMode() { return this.mode == ModeToggle.LIGHT_MODE; }
+
+    get hasMode() { return this.mode != null; }
+
+    get mode() { return sessionStorage.getItem(ModeToggle.MODE_KEY); }
+
+    /* get the current mode on screen */
+    get modeStatus() {
+      if (this.isDarkMode
+        || (!this.hasMode && this.isSysDarkPrefer) ) {
+        return ModeToggle.DARK_MODE;
+      } else {
+        return ModeToggle.LIGHT_MODE;
+      }
+    }
+
+    updateMermaid() {
+      if (typeof mermaid !== "undefined") {
+        let expectedTheme = (this.modeStatus === ModeToggle.DARK_MODE? "dark" : "default");
+        let config = { theme: expectedTheme };
+
+        /* re-render the SVG › <https://github.com/mermaid-js/mermaid/issues/311#issuecomment-332557344> */
+        $(".mermaid").each(function() {
+          let svgCode = $(this).prev().children().html();
+          $(this).removeAttr("data-processed");
+          $(this).html(svgCode);
+        });
+
+        mermaid.initialize(config);
+        mermaid.init(undefined, ".mermaid");
+      }
+    }
+
+    flipMode() {
+      if (this.hasMode) {
+        if (this.isSysDarkPrefer) {
+          if (this.isLightMode) {
+            this.clearMode();
+          } else {
+            this.setLight();
+          }
+
+        } else {
+          if (this.isDarkMode) {
+            this.clearMode();
+          } else {
+            this.setDark();
+          }
+        }
+
+      } else {
+        if (this.isSysDarkPrefer) {
+          this.setLight();
+        } else {
+          this.setDark();
+        }
+      }
+
+      this.updateMermaid();
+
+    } /* flipMode() */
+
+  } /* ModeToggle */
+
+  let toggle = new ModeToggle();
+
+  $(".mode-toggle").click(function() {
+
+    toggle.flipMode();
+
+  });
+
+</script>
+
+      </span>
+    
+
+  </div> <!-- .sidebar-bottom -->
+
+</div><!-- #sidebar -->
+
+
+    <!--
+  The Top Bar
+-->
+
+<div id="topbar-wrapper" class="row justify-content-center topbar-down">
+  <div id="topbar" class="col-11 d-flex h-100 align-items-center justify-content-between">
+    <span id="breadcrumb">
+
+    
+
+    
+
+      
+
+        
+          <span>
+            <a href="/">
+              Home
+            </a>
+          </span>
+
+        
+
+      
+
+        
+
+      
+
+        
+
+          
+            <span>How to get process socket information from /proc</span>
+          
+
+        
+
+      
+
+    
+
+    </span><!-- endof #breadcrumb -->
+
+    <i id="sidebar-trigger" class="fas fa-bars fa-fw"></i>
+
+    <div id="topbar-title">
+      Post
+    </div>
+
+    <i id="search-trigger" class="fas fa-search fa-fw"></i>
+    <span id="search-wrapper" class="align-items-center">
+      <i class="fas fa-search fa-fw"></i>
+      <input class="form-control" id="search-input" type="search"
+        aria-label="search" autocomplete="off" placeholder="Search...">
+      <i class="fa fa-times-circle fa-fw" id="search-cleaner"></i>
+    </span>
+    <span id="search-cancel" >Cancel</span>
+  </div>
+
+</div>
+
+
+    <div id="main-wrapper">
+      <div id="main">
+
+        <!--
+  Refactor the HTML structure.
+-->
+
+
+
+<!--
+  In order to allow a wide table to scroll horizontally,
+  we suround the markdown table with `<div class="table-wrapper">` and `</div>`
+-->
+
+
+
+<!--
+  Fixed kramdown code highlight rendering:
+  https://github.com/penibelst/jekyll-compress-html/issues/101
+  https://github.com/penibelst/jekyll-compress-html/issues/71#issuecomment-188144901
+-->
+
+
+
+<!-- Add attribute 'hide-bullet' to the checkbox list -->
+
+
+
+
+<!-- images -->
+
+
+
+<!-- Add lang-badge for code snippets -->
+
+
+
+
+<!-- return -->
+
+
+
+
+
+<div class="row">
+
+  <div id="post-wrapper" class="col-12 col-lg-11 col-xl-8">
+
+    <div class="post pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4">
+
+      <h1 data-toc-skip>How to get process socket information from /proc</h1>
+
+      <div class="post-meta text-muted d-flex flex-column">
+        <!-- Published date and author -->
+        <div>
+          <span class="semi-bold">
+            Leontin Chiru
+          </span>
+          
+          <!--
+  Date format snippet
+  See: /assets/js/_utils/timeage.js
+-->
+
+
+
+
+
+
+  on
+
+<span class="timeago "
+  
+    data-toggle="tooltip"
+    data-placement="bottom"
+    title="Tue, Aug 10, 2021, 12:00 AM +0300"
+  >Aug 10, 2021<i class="unloaded">2021-08-10T00:00:00+03:00</i>
+</span>
+
+        </div>
+
+        <div>
+          <!-- lastmod -->
+          
+
+          <!-- read time -->
+          <!--
+  Calculate the post's reading time, and display the word count in tooltip
+ -->
+
+
+
+<!-- words per minute  -->
+
+
+
+
+
+
+
+
+
+
+<!-- return element -->
+<span class="readtime" data-toggle="tooltip" data-placement="bottom"
+  title="1573 words">8 min read</span>
+
+
+          <!-- page views -->
+          
+
+        </div>
+
+      </div> <!-- .post-meta -->
+
+      <div class="post-content">
+
+        
+
+        <p>When I want to see the connections opened by some process I normally use
+commands like <code class="language-plaintext highlighter-rouge">lsof</code> and <code class="language-plaintext highlighter-rouge">ss</code>. But these commands are not always available.
+In these scenarios, I found that it’s not that difficult to obtain the same
+information from the <code class="language-plaintext highlighter-rouge">/proc</code> filesystem.</p>
+
+<p>I will show here how this can be done by first checking the output from <code class="language-plaintext highlighter-rouge">lsof</code>
+and <code class="language-plaintext highlighter-rouge">ss</code>, then finding the same information from the <code class="language-plaintext highlighter-rouge">proc</code> filesystem.</p>
+
+<h2 id="test-setup">Test setup</h2>
+
+<p>For this test, I will start a Jenkins container. The container will have TCP
+port 8080 open, and I will access it from my browser to generate connections.
+The socket inodes and the port numbers will change during the tests, because the
+connections are not kept open for more than a few seconds.</p>
+
+<p>We will be looking at the connections as seen from the host and from inside the
+container. We will see that network information fro inside the container is not
+directly available to commands running on the host. Also we will see that <code class="language-plaintext highlighter-rouge">lsof</code>
+is not available inside the container. Finally we will examine connection
+information by looking in the <code class="language-plaintext highlighter-rouge">/proc</code> filesystem inside the container.</p>
+
+<h2 id="connections-as-seen-by-the-host">Connections as seen by the host</h2>
+
+<p>First let’s find the id of the process as seen by the host:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
 5
-</pre><td class="rouge-code"><pre>root@leo-ubuntu-20:~# ps awwwxf | <span class="nb">grep </span>jenkins
+</pre></td><td class="rouge-code"><pre>root@leo-ubuntu-20:~# ps awwwxf | <span class="nb">grep </span>jenkins
   26863 ?        Ss     0:00  |       <span class="se">\_</span> /sbin/tini <span class="nt">--</span> /usr/local/bin/jenkins.sh
   26890 ?        Sl     0:56  |           <span class="se">\_</span> java <span class="nt">-Duser</span>.home<span class="o">=</span>/var/jenkins_home <span class="nt">-Djenkins</span>.model.Jenkins.slaveAgentPort<span class="o">=</span>50000 <span class="nt">-jar</span> /usr/share/jenkins/jenkins.war
   27312 pts/2    S+     0:00                          <span class="se">\_</span> <span class="nb">grep</span> <span class="nt">--color</span><span class="o">=</span>auto jenkins
 root@leo-ubuntu-20:~#
-</pre></table></code></div></div><p>We see that the PID is <code class="language-plaintext highlighter-rouge">26890</code>. Now let’s check the open files as listed by lsof. I’m filtering by <code class="language-plaintext highlighter-rouge">sock</code> to avoid the huge list of open files:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>We see that the PID is <code class="language-plaintext highlighter-rouge">26890</code>.
+Now let’s check the open files as listed by lsof. I’m filtering by <code class="language-plaintext highlighter-rouge">sock</code> to
+avoid the huge list of open files:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -24,7 +628,7 @@ root@leo-ubuntu-20:~#
 14
 15
 16
-</pre><td class="rouge-code"><pre>root@leo-ubuntu-20:~# lsof <span class="nt">-p</span> 26890 | <span class="nb">grep </span>sock
+</pre></td><td class="rouge-code"><pre>root@leo-ubuntu-20:~# lsof <span class="nt">-p</span> 26890 | <span class="nb">grep </span>sock
 lsof: WARNING: can<span class="s1">'t stat() fuse.gvfsd-fuse file system /run/user/1000/gvfs
       Output information may be incomplete.
 lsof: WARNING: can'</span>t <span class="nb">stat</span><span class="o">()</span> fuse file system /run/user/1000/doc
@@ -40,11 +644,22 @@ java    26890  leo  149u     sock    0,8      0t0 618055 protocol: TCP
 java    26890  leo  150u     sock    0,8      0t0 618061 protocol: TCP
 java    26890  leo  152u     sock    0,8      0t0 617295 protocol: TCP
 root@leo-ubuntu-20:~#
-</pre></table></code></div></div><p>We can see two UNIX sockets and a few TCP sockets. The TCP information is not available, as Jenkins is running in a different network namespace from the host.</p><p>If we try using <code class="language-plaintext highlighter-rouge">ss</code> to see the open connections, we hit the same limitation. The information is not available in the network namespace of the host:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>We can see two UNIX sockets and a few TCP sockets. The TCP information is  not
+available, as Jenkins is running in a different network namespace from the host.</p>
+
+<p>If we try using <code class="language-plaintext highlighter-rouge">ss</code> to see the open connections, we hit the same limitation.
+The information is not available in the network namespace of the host:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
-</pre><td class="rouge-code"><pre>root@leo-ubuntu-20:~# ss <span class="nt">-p</span> | <span class="nb">grep </span>26890
+</pre></td><td class="rouge-code"><pre>root@leo-ubuntu-20:~# ss <span class="nt">-p</span> | <span class="nb">grep </span>26890
 root@leo-ubuntu-20:~#
-</pre></table></code></div></div><p>But if we run the same command in the namespace of the process we can see detailed information about the connections:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>But if we run the same command in the namespace of the process we can see
+detailed information about the connections:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -54,7 +669,7 @@ root@leo-ubuntu-20:~#
 8
 9
 10
-</pre><td class="rouge-code"><pre>root@leo-ubuntu-20:~# nsenter <span class="nt">-t</span> 26890 <span class="nt">-n</span> ss <span class="nt">-p</span> | <span class="nb">grep </span>26890
+</pre></td><td class="rouge-code"><pre>root@leo-ubuntu-20:~# nsenter <span class="nt">-t</span> 26890 <span class="nt">-n</span> ss <span class="nt">-p</span> | <span class="nb">grep </span>26890
 u_str  ESTAB  0       0                      <span class="k">*</span> 607015                  <span class="k">*</span> 0       <span class="nb">users</span>:<span class="o">((</span><span class="s2">"java"</span>,pid<span class="o">=</span>26890,fd<span class="o">=</span>138<span class="o">))</span>
 u_str  ESTAB  0       0                      <span class="k">*</span> 606974                  <span class="k">*</span> 0       <span class="nb">users</span>:<span class="o">((</span><span class="s2">"java"</span>,pid<span class="o">=</span>26890,fd<span class="o">=</span>18<span class="o">))</span>
 tcp    ESTAB  0       0             172.17.0.2:http-alt       172.17.0.1:54584   <span class="nb">users</span>:<span class="o">((</span><span class="s2">"java"</span>,pid<span class="o">=</span>26890,fd<span class="o">=</span>149<span class="o">))</span>
@@ -64,31 +679,42 @@ tcp    ESTAB  0       0             172.17.0.2:http-alt       172.17.0.1:54580  
 tcp    ESTAB  0       0             172.17.0.2:http-alt       172.17.0.1:54570   <span class="nb">users</span>:<span class="o">((</span><span class="s2">"java"</span>,pid<span class="o">=</span>26890,fd<span class="o">=</span>153<span class="o">))</span>
 tcp    ESTAB  0       0             172.17.0.2:http-alt       172.17.0.1:54582   <span class="nb">users</span>:<span class="o">((</span><span class="s2">"java"</span>,pid<span class="o">=</span>26890,fd<span class="o">=</span>146<span class="o">))</span>
 root@leo-ubuntu-20:~#
-</pre></table></code></div></div><h2 id="connections-as-seen-inside-the-container">Connections as seen inside the container</h2><p>We now enter inside the container. We will run all further commands from here:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<h2 id="connections-as-seen-inside-the-container">Connections as seen inside the container</h2>
+
+<p>We now enter inside the container. We will run all further commands from here:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
 5
-</pre><td class="rouge-code"><pre>root@leo-ubuntu-20:~# docker ps
+</pre></td><td class="rouge-code"><pre>root@leo-ubuntu-20:~# docker ps
 CONTAINER ID        IMAGE                 COMMAND                  CREATED             STATUS              PORTS                               NAMES
 54e9a2cefd94        jenkins/jenkins:lts   <span class="s2">"/sbin/tini -- /usr/…"</span>   34 minutes ago      Up 34 minutes       0.0.0.0:8080-&gt;8080/tcp, 50000/tcp   thirsty_albattani
 root@leo-ubuntu-20:~# docker <span class="nb">exec</span> <span class="nt">-ti</span> 54e9 bash
 jenkins@54e9a2cefd94:/<span class="err">$</span>
-</pre></table></code></div></div><p>Let’s check the process IDs here:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>Let’s check the process IDs here:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
 5
 6
 7
-</pre><td class="rouge-code"><pre>jenkins@54e9a2cefd94:/<span class="nv">$ </span>ps awwxf
+</pre></td><td class="rouge-code"><pre>jenkins@54e9a2cefd94:/<span class="nv">$ </span>ps awwxf
     PID TTY      STAT   TIME COMMAND
      92 pts/0    Ss     0:00 bash
      97 pts/0    R+     0:00  <span class="se">\_</span> ps awwxf
       1 ?        Ss     0:00 /sbin/tini <span class="nt">--</span> /usr/local/bin/jenkins.sh
       6 ?        Sl     1:00 java <span class="nt">-Duser</span>.home<span class="o">=</span>/var/jenkins_home <span class="nt">-Djenkins</span>.model.Jenkins.slaveAgentPort<span class="o">=</span>50000 <span class="nt">-jar</span> /usr/share/jenkins/jenkins.war
 jenkins@54e9a2cefd94:/<span class="err">$</span>
-</pre></table></code></div></div><p>And let’s see what information we can collect with <code class="language-plaintext highlighter-rouge">lsof</code> and <code class="language-plaintext highlighter-rouge">ss</code>:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>And let’s see what information we can collect with <code class="language-plaintext highlighter-rouge">lsof</code> and <code class="language-plaintext highlighter-rouge">ss</code>:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -99,7 +725,7 @@ jenkins@54e9a2cefd94:/<span class="err">$</span>
 9
 10
 11
-</pre><td class="rouge-code"><pre>jenkins@54e9a2cefd94:/<span class="nv">$ </span>lsof <span class="nt">-p</span> 6
+</pre></td><td class="rouge-code"><pre>jenkins@54e9a2cefd94:/<span class="nv">$ </span>lsof <span class="nt">-p</span> 6
 bash: lsof: <span class="nb">command </span>not found
 jenkins@54e9a2cefd94:/<span class="nv">$ </span>ss <span class="nt">-p</span>
 Netid State Recv-Q Send-Q   Local Address:Port       Peer Address:Port
@@ -110,7 +736,18 @@ tcp   ESTAB 0      0           172.17.0.2:http-alt     172.17.0.1:54718  <span c
 tcp   ESTAB 0      0           172.17.0.2:http-alt     172.17.0.1:54722  <span class="nb">users</span>:<span class="o">((</span><span class="s2">"java"</span>,pid<span class="o">=</span>6,fd<span class="o">=</span>142<span class="o">))</span>
 tcp   ESTAB 0      0           172.17.0.2:http-alt     172.17.0.1:54728  <span class="nb">users</span>:<span class="o">((</span><span class="s2">"java"</span>,pid<span class="o">=</span>6,fd<span class="o">=</span>145<span class="o">))</span>
 jenkins@54e9a2cefd94:/<span class="err">$</span>
-</pre></table></code></div></div><p>We can see that <code class="language-plaintext highlighter-rouge">lsof</code> is not available and <code class="language-plaintext highlighter-rouge">ss</code> provides the full information. Now let’s take a look at the information from <code class="language-plaintext highlighter-rouge">/proc</code>.</p><h2 id="checking-the-proc-filesystem">Checking the /proc filesystem</h2><p>In the <code class="language-plaintext highlighter-rouge">/proc</code> filesystem there is a folder for each process id. Each of these folders contain information about that specific process. We will be looking at the <code class="language-plaintext highlighter-rouge">fd</code> subfolder, which lists the file descriptors of that process. Again, I’m filtering on <code class="language-plaintext highlighter-rouge">sock</code> to avoid the huge list of files:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>We can see that <code class="language-plaintext highlighter-rouge">lsof</code> is not available and <code class="language-plaintext highlighter-rouge">ss</code> provides the full information.
+Now let’s take a look at the  information from <code class="language-plaintext highlighter-rouge">/proc</code>.</p>
+
+<h2 id="checking-the-proc-filesystem">Checking the /proc filesystem</h2>
+
+<p>In the <code class="language-plaintext highlighter-rouge">/proc</code> filesystem there is a folder for each process id. Each of these
+folders contain information about that specific process. We will be looking at
+the <code class="language-plaintext highlighter-rouge">fd</code> subfolder, which lists the file descriptors of that process. Again,
+I’m filtering on <code class="language-plaintext highlighter-rouge">sock</code> to avoid the huge list of files:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -121,7 +758,7 @@ jenkins@54e9a2cefd94:/<span class="err">$</span>
 9
 10
 11
-</pre><td class="rouge-code"><pre>jenkins@54e9a2cefd94:/<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /proc/6/fd | <span class="nb">grep </span>sock
+</pre></td><td class="rouge-code"><pre>jenkins@54e9a2cefd94:/<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /proc/6/fd | <span class="nb">grep </span>sock
 lrwx------ 1 jenkins jenkins 64 Aug 10 07:51 137 -&gt; socket:[607014]
 lrwx------ 1 jenkins jenkins 64 Aug 10 07:51 138 -&gt; socket:[607015]
 lrwx------ 1 jenkins jenkins 64 Aug 10 07:51 142 -&gt; socket:[619101]
@@ -132,13 +769,30 @@ lrwx------ 1 jenkins jenkins 64 Aug 10 07:56 149 -&gt; socket:[618922]
 lrwx------ 1 jenkins jenkins 64 Aug 10 07:56 150 -&gt; socket:[619110]
 lrwx------ 1 jenkins jenkins 64 Aug 10 07:51 18 -&gt; socket:[606974]
 jenkins@54e9a2cefd94:/<span class="err">$</span>
-</pre></table></code></div></div><p>We now have the list of sockets but we need to match these to network addresses and ports. This information can be found in files from <code class="language-plaintext highlighter-rouge">/proc/net/</code>, for example <code class="language-plaintext highlighter-rouge">proc/net/tcp</code> for tcp connections.</p><p>Let’s take a socket inode from the output above and look for it in all files from <code class="language-plaintext highlighter-rouge">/proc/net</code> while discarding any error messages:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>We now have the list of sockets but we need to match these to network addresses
+and ports. This information can be found in files from <code class="language-plaintext highlighter-rouge">/proc/net/</code>, for example
+<code class="language-plaintext highlighter-rouge">proc/net/tcp</code> for tcp connections.</p>
+
+<p>Let’s take a socket inode from the output above and look for it in all files
+from <code class="language-plaintext highlighter-rouge">/proc/net</code> while discarding any error messages:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
-</pre><td class="rouge-code"><pre>jenkins@54e9a2cefd94:/<span class="nv">$ </span><span class="nb">grep </span>606974 /proc/net/<span class="k">*</span> 2&gt;/dev/null
+</pre></td><td class="rouge-code"><pre>jenkins@54e9a2cefd94:/<span class="nv">$ </span><span class="nb">grep </span>606974 /proc/net/<span class="k">*</span> 2&gt;/dev/null
 /proc/net/unix:0000000000000000: 00000002 00000000 00000000 0001 03 606974
 jenkins@54e9a2cefd94:/<span class="err">$</span>
-</pre></table></code></div></div><p>We can see that this is a unix socket. Now let’s get the same info for all the sockets.</p><p>I will use a longer command to check the file descriptors for process with id <code class="language-plaintext highlighter-rouge">6</code>, select the lines matching <code class="language-plaintext highlighter-rouge">socket</code>, then selecting the text that comes after <code class="language-plaintext highlighter-rouge">[</code> and before <code class="language-plaintext highlighter-rouge">]</code>. For each inode obtained in this way, I will grep the files in <code class="language-plaintext highlighter-rouge">/proc/net</code> looking for that specific inode.</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>We can see that this is a unix socket. Now let’s  get the same info for all the
+sockets.</p>
+
+<p>I will use a longer command to check the file descriptors for process with id
+<code class="language-plaintext highlighter-rouge">6</code>, select the lines matching <code class="language-plaintext highlighter-rouge">socket</code>, then selecting the text that comes
+after <code class="language-plaintext highlighter-rouge">[</code> and before <code class="language-plaintext highlighter-rouge">]</code>. For each inode obtained in this way, I will grep
+the files in <code class="language-plaintext highlighter-rouge">/proc/net</code> looking for that specific inode.</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -150,7 +804,7 @@ jenkins@54e9a2cefd94:/<span class="err">$</span>
 10
 11
 12
-</pre><td class="rouge-code"><pre>jenkins@54e9a2cefd94:/<span class="nv">$ </span><span class="k">for </span>s <span class="k">in</span> <span class="sb">`</span><span class="nb">ls</span> <span class="nt">-l</span> /proc/6/fd | <span class="nb">grep </span>sock | <span class="nb">cut</span> <span class="nt">-d</span><span class="s1">'['</span> <span class="nt">-f2</span> | <span class="nb">cut</span> <span class="nt">-d</span> <span class="s1">']'</span> <span class="nt">-f1</span><span class="sb">`</span> <span class="p">;</span> <span class="k">do </span><span class="nb">grep</span> <span class="nv">$s</span> /proc/net/<span class="k">*</span> 2&gt;/dev/null <span class="p">;</span> <span class="k">done</span>
+</pre></td><td class="rouge-code"><pre>jenkins@54e9a2cefd94:/<span class="nv">$ </span><span class="k">for </span>s <span class="k">in</span> <span class="sb">`</span><span class="nb">ls</span> <span class="nt">-l</span> /proc/6/fd | <span class="nb">grep </span>sock | <span class="nb">cut</span> <span class="nt">-d</span><span class="s1">'['</span> <span class="nt">-f2</span> | <span class="nb">cut</span> <span class="nt">-d</span> <span class="s1">']'</span> <span class="nt">-f1</span><span class="sb">`</span> <span class="p">;</span> <span class="k">do </span><span class="nb">grep</span> <span class="nv">$s</span> /proc/net/<span class="k">*</span> 2&gt;/dev/null <span class="p">;</span> <span class="k">done</span>
 /proc/net/tcp:   1: 00000000:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 607014 1 0000000000000000 100 0 0 10 0
 /proc/net/unix:0000000000000000: 00000002 00000000 00000000 0001 03 607015
 /proc/net/tcp:   8: 020011AC:1F90 010011AC:D63E 01 00000000:00000000 00:00000000 00000000  1000        0 621793 1 0000000000000000 20 4 20 10 <span class="nt">-1</span>
@@ -162,8 +816,857 @@ jenkins@54e9a2cefd94:/<span class="err">$</span>
 /proc/net/tcp:   9: 020011AC:1F90 010011AC:D64E 01 00000000:00000000 00:00000000 00000000  1000        0 621810 1 0000000000000000 20 4 20 10 <span class="nt">-1</span>
 /proc/net/unix:0000000000000000: 00000002 00000000 00000000 0001 03 606974
 jenkins@54e9a2cefd94:/<span class="err">$</span>
-</pre></table></code></div></div><p>The information may seem difficult to read because it’s written in hex, but it’s just what we needed. Let’s check one of the TCP connections:</p><div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
-</pre><td class="rouge-code"><pre>/proc/net/tcp:   8: 020011AC:1F90 010011AC:D63E 01 00000000:00000000 00:00000000 00000000  1000        0 621793 1 0000000000000000 20 4 20 10 -1
-</pre></table></code></div></div><p>We can see two fields that look like IP and port information: <code class="language-plaintext highlighter-rouge">020011AC:1F90</code> where <code class="language-plaintext highlighter-rouge">02 00 11 AC</code> is 2, 0, 17, 172 so the IP address is <code class="language-plaintext highlighter-rouge">172.17.0.2</code>. Port <code class="language-plaintext highlighter-rouge">1F90</code> is 8080 in decimal, so the information here is <code class="language-plaintext highlighter-rouge">172.17.0.2:8080</code> which is the local address. By converting the second field <code class="language-plaintext highlighter-rouge">010011AC:D63E</code> we get <code class="language-plaintext highlighter-rouge">172.17.0.1:54846</code> which is the other end of this connection.</p><p>Now we know that this line shows a connection between <code class="language-plaintext highlighter-rouge">172.17.0.2:8080</code> and <code class="language-plaintext highlighter-rouge">172.17.0.1:54846</code>.</p><p>There is another line in the output that looks interesting:</p><div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
-</pre><td class="rouge-code"><pre>/proc/net/tcp:   1: 00000000:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 607014 1 0000000000000000 100 0 0 10 0
-</pre></table></code></div></div><p>Here, the connection looks as if it were from <code class="language-plaintext highlighter-rouge">0.0.0.0:0</code> to <code class="language-plaintext highlighter-rouge">0.0.0.0:8080</code>. This is showing that the process is listening on all local IPs (<code class="language-plaintext highlighter-rouge">0.0.0.0</code>) on port <code class="language-plaintext highlighter-rouge">8080</code>.</p><p>So, by looking only at the <code class="language-plaintext highlighter-rouge">/proc</code> filesystem we found the same information that was provided by <code class="language-plaintext highlighter-rouge">lsof</code> and <code class="language-plaintext highlighter-rouge">ss</code>. This can be useful when these tools are not available, or maybe even just for fun.</p><h2 id="references">References</h2><p>For more details about the <code class="language-plaintext highlighter-rouge">/proc/</code> filesystem and the other commands used here, please check:</p><ul><li><a href="https://man7.org/linux/man-pages/man8/lsof.8.html">lsof man page</a><li><a href="https://www.man7.org/linux/man-pages/man8/ss.8.html">ss man page</a><li><a href="https://man7.org/linux/man-pages/man1/nsenter.1.html">nsenter man page</a><li><a href="https://man7.org/linux/man-pages/man5/proc.5.html">proc man page</a><li><a href="https://www.kernel.org/doc/html/latest/filesystems/proc.html">/proc filesystem documentation</a></ul></div><div class="post-tail-wrapper text-muted"><div class="post-meta mb-3"> <i class="far fa-folder-open fa-fw mr-1"></i> <a href='/categories/howtos/'>Howtos</a></div><div class="post-tags"> <i class="fa fa-tags fa-fw mr-1"></i> <a href="/tags/linux/" class="post-tag no-text-decoration" >linux</a></div><div class="post-tail-bottom d-flex justify-content-between align-items-center mt-3 pt-5 pb-2"><div class="license-wrapper"> This post is licensed under <a href="https://creativecommons.org/licenses/by/4.0/"> CC BY 4.0 </a> by the author.</div><div class="share-wrapper"> <span class="share-label text-muted mr-1">Share</span> <span class="share-icons"> <a href="https://twitter.com/intent/tweet?text=How to get process socket information from /proc - Leontin Chiru&url=https://www.leontin.eu/posts/check-file-descriptors/" data-toggle="tooltip" data-placement="top" title="Twitter" target="_blank" rel="noopener" aria-label="Twitter"> <i class="fa-fw fab fa-twitter"></i> </a> <a href="https://www.facebook.com/sharer/sharer.php?title=How to get process socket information from /proc - Leontin Chiru&u=https://www.leontin.eu/posts/check-file-descriptors/" data-toggle="tooltip" data-placement="top" title="Facebook" target="_blank" rel="noopener" aria-label="Facebook"> <i class="fa-fw fab fa-facebook-square"></i> </a> <a href="https://telegram.me/share?text=How to get process socket information from /proc - Leontin Chiru&url=https://www.leontin.eu/posts/check-file-descriptors/" data-toggle="tooltip" data-placement="top" title="Telegram" target="_blank" rel="noopener" aria-label="Telegram"> <i class="fa-fw fab fa-telegram"></i> </a> <i class="fa-fw fas fa-link small" onclick="copyLink('', 'Link copied successfully!')" data-toggle="tooltip" data-placement="top" title="Copy link"> </i> </span></div></div></div></div></div><div id="panel-wrapper" class="col-xl-3 pl-2 text-muted topbar-down"><div class="access"><div id="access-tags"> <span>Trending Tags</span><div class="d-flex flex-wrap mt-3 mb-1 mr-3"> <a class="post-tag" href="/tags/linux/">linux</a> <a class="post-tag" href="/tags/port/">port</a> <a class="post-tag" href="/tags/test/">test</a></div></div></div><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.js"></script><div id="toc-wrapper" class="pl-0 pr-4 mb-5"> <span class="pl-3 pt-2 mb-2">Contents</span><nav id="toc" data-toggle="toc"></nav></div></div></div><div class="row"><div class="col-12 col-lg-11 col-xl-8"><div id="post-extend-wrapper" class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4"><div id="related-posts" class="mt-5 mb-2 mb-sm-4"><h3 class="pt-2 mt-1 mb-4 ml-1" data-toc-skip>Further Reading</h3><div class="card-deck mb-4"><div class="card"> <a href="/posts/more-file-descriptors/"><div class="card-body"> <span class="timeago small" >Aug 11<i class="unloaded">2021-08-11T00:00:00+03:00</i> </span><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Checking more file descriptors</h3><div class="text-muted small"><p> In the previous post we looked at how to check network connections for a particular process from the /proc filesystem. Now let’s take a look at the other file descriptors and see what information w...</p></div></div></a></div><div class="card"> <a href="/posts/test-ports/"><div class="card-body"> <span class="timeago small" >Jul 20<i class="unloaded">2021-07-20T00:00:00+03:00</i> </span><h3 class="pt-0 mt-1 mb-3" data-toc-skip>How to test if a port is open and accessible</h3><div class="text-muted small"><p> Many times while troubleshooting, we need to test if the network connection to a specific service is working or not. The result from such a test can show if I’m dealing with a problem on the networ...</p></div></div></a></div><div class="card"> <a href="/posts/docker-bridge-networks/"><div class="card-body"> <span class="timeago small" >Aug 19<i class="unloaded">2021-08-19T00:00:00+03:00</i> </span><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Checking the docker bridge networks</h3><div class="text-muted small"><p> This is just for fun and practice. Let’s take a look at how docker implements the bridge networks. The environment I am using the same VM as before, running Ubuntu. I have docker installed with o...</p></div></div></a></div></div></div><div class="post-navigation d-flex justify-content-between"> <a href="/posts/test-ports/" class="btn btn-outline-primary" prompt="Older"><p>How to test if a port is open and accessible</p></a> <a href="/posts/more-file-descriptors/" class="btn btn-outline-primary" prompt="Newer"><p>Checking more file descriptors</p></a></div><script src="https://utteranc.es/client.js" repo="cleontin/cleontin.github.io" issue-term="pathname" theme="preferred-color-scheme" crossorigin="anonymous" async> </script></div></div></div><footer class="d-flex w-100 justify-content-center"><div class="d-flex justify-content-between align-items-center"><div class="footer-left"><p class="mb-0"> © 2021 <a href="https://github.com/cleontin">Leontin Chiru</a>. <span data-toggle="tooltip" data-placement="top" title="Except where otherwise noted, the blog posts on this site are licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) License by the author.">Some rights reserved.</span></p></div><div class="footer-right"><p class="mb-0"> Powered by <a href="https://jekyllrb.com" target="_blank" rel="noopener">Jekyll</a> with <a href="https://github.com/cotes2020/jekyll-theme-chirpy" target="_blank" rel="noopener">Chirpy</a> theme.</p></div></div></footer></div><div id="search-result-wrapper" class="d-flex justify-content-center unloaded"><div class="col-12 col-sm-11 post-content"><div id="search-hints"><h4 class="text-muted mb-4">Trending Tags</h4><a class="post-tag" href="/tags/linux/">linux</a> <a class="post-tag" href="/tags/port/">port</a> <a class="post-tag" href="/tags/test/">test</a></div><div id="search-results" class="d-flex flex-wrap justify-content-center text-muted mt-3"></div></div></div></div><div id="mask"></div><a id="back-to-top" href="#" aria-label="back-to-top" class="btn btn-lg btn-box-shadow" role="button"> <i class="fas fa-angle-up"></i> </a> <script src="https://cdn.jsdelivr.net/npm/simple-jekyll-search@1.7.3/dest/simple-jekyll-search.min.js"></script> <script> SimpleJekyllSearch({ searchInput: document.getElementById('search-input'), resultsContainer: document.getElementById('search-results'), json: '/assets/js/data/search.json', searchResultTemplate: '<div class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-lg-4 pr-lg-4 pl-xl-0 pr-xl-0"> <a href="https://www.leontin.eu{url}">{title}</a><div class="post-meta d-flex flex-column flex-sm-row text-muted mt-1 mb-1"> {categories} {tags}</div><p>{snippet}</p></div>', noResultsText: '<p class="mt-5">Oops! No result founds.</p>', templateMiddleware: function(prop, value, template) { if (prop === 'categories') { if (value === '') { return `${value}`; } else { return `<div class="mr-sm-4"><i class="far fa-folder fa-fw"></i>${value}</div>`; } } if (prop === 'tags') { if (value === '') { return `${value}`; } else { return `<div><i class="fa fa-tag fa-fw"></i>${value}</div>`; } } } }); </script> <script src="https://cdn.jsdelivr.net/combine/npm/lozad/dist/lozad.min.js,npm/magnific-popup@1/dist/jquery.magnific-popup.min.js"></script> <script defer src="/assets/js/dist/post.min.js"></script> <script src="https://cdn.jsdelivr.net/combine/npm/popper.js@1.16.1,npm/bootstrap@4/dist/js/bootstrap.min.js"></script> <script defer src="/app.js"></script> <script defer src="https://www.googletagmanager.com/gtag/js?id=G-VXCTSGEL7Y"></script> <script> document.addEventListener("DOMContentLoaded", function(event) { window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-VXCTSGEL7Y'); }); </script>
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>The information may seem difficult to read because it’s written in hex, but it’s
+just what we needed. Let’s check one of the TCP connections:</p>
+<div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>/proc/net/tcp:   8: 020011AC:1F90 010011AC:D63E 01 00000000:00000000 00:00000000 00000000  1000        0 621793 1 0000000000000000 20 4 20 10 -1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>We can see two fields that look like IP and port information: <code class="language-plaintext highlighter-rouge">020011AC:1F90</code>
+where <code class="language-plaintext highlighter-rouge">02 00 11 AC</code> is 2, 0, 17, 172 so the IP address is <code class="language-plaintext highlighter-rouge">172.17.0.2</code>. Port 
+<code class="language-plaintext highlighter-rouge">1F90</code> is 8080 in decimal, so the information here is <code class="language-plaintext highlighter-rouge">172.17.0.2:8080</code> which is
+the local address.
+By converting the second field <code class="language-plaintext highlighter-rouge">010011AC:D63E</code> we get <code class="language-plaintext highlighter-rouge">172.17.0.1:54846</code> which
+is the other end of this connection.</p>
+
+<p>Now we know that this line shows a connection between <code class="language-plaintext highlighter-rouge">172.17.0.2:8080</code> and
+<code class="language-plaintext highlighter-rouge">172.17.0.1:54846</code>.</p>
+
+<p>There is another line in the output that looks interesting:</p>
+<div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>/proc/net/tcp:   1: 00000000:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 607014 1 0000000000000000 100 0 0 10 0
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>Here, the connection looks as if it were from <code class="language-plaintext highlighter-rouge">0.0.0.0:0</code> to <code class="language-plaintext highlighter-rouge">0.0.0.0:8080</code>.
+This is showing that the process is listening on all local IPs (<code class="language-plaintext highlighter-rouge">0.0.0.0</code>) on
+port <code class="language-plaintext highlighter-rouge">8080</code>.</p>
+
+<p>So, by looking only at the <code class="language-plaintext highlighter-rouge">/proc</code> filesystem we found the same information that
+was provided by <code class="language-plaintext highlighter-rouge">lsof</code> and <code class="language-plaintext highlighter-rouge">ss</code>. This can be useful when these tools are not
+available, or maybe even just for fun.</p>
+
+<h2 id="references">References</h2>
+
+<p>For more details about the <code class="language-plaintext highlighter-rouge">/proc/</code> filesystem and the other commands used here,
+please check:</p>
+<ul>
+  <li><a href="https://man7.org/linux/man-pages/man8/lsof.8.html">lsof man page</a></li>
+  <li><a href="https://www.man7.org/linux/man-pages/man8/ss.8.html">ss man page</a></li>
+  <li><a href="https://man7.org/linux/man-pages/man1/nsenter.1.html">nsenter man page</a></li>
+  <li><a href="https://man7.org/linux/man-pages/man5/proc.5.html">proc man page</a></li>
+  <li><a href="https://www.kernel.org/doc/html/latest/filesystems/proc.html">/proc filesystem documentation</a></li>
+</ul>
+
+
+      </div>
+
+      <div class="post-tail-wrapper text-muted">
+
+        <!-- categories -->
+        
+
+        <div class="post-meta mb-3">
+          <i class="far fa-folder-open fa-fw mr-1"></i>
+          
+            <a href='/categories/howtos/'>Howtos</a>
+        </div>
+        
+
+        <!-- tags -->
+        
+        <div class="post-tags">
+          <i class="fa fa-tags fa-fw mr-1"></i>
+          
+          <a href="/tags/linux/"
+            class="post-tag no-text-decoration" >linux</a>
+          
+          </div>
+        
+
+        <div class="post-tail-bottom
+          d-flex justify-content-between align-items-center mt-3 pt-5 pb-2">
+          <div class="license-wrapper">
+          
+            
+            This post is licensed under 
+            <a href="https://creativecommons.org/licenses/by/4.0/">
+              CC BY 4.0
+            </a>
+             by the author.
+          
+          </div>
+
+          <!--
+ Post sharing snippet
+-->
+
+<div class="share-wrapper">
+  <span class="share-label text-muted mr-1">Share</span>
+  <span class="share-icons">
+    
+    
+
+    
+      
+        <a href="https://twitter.com/intent/tweet?text=How to get process socket information from /proc - Leontin Chiru&url=https://www.leontin.eu/posts/check-file-descriptors/" data-toggle="tooltip" data-placement="top"
+          title="Twitter" target="_blank" rel="noopener" aria-label="Twitter">
+          <i class="fa-fw fab fa-twitter"></i>
+        </a>
+    
+      
+        <a href="https://www.facebook.com/sharer/sharer.php?title=How to get process socket information from /proc - Leontin Chiru&u=https://www.leontin.eu/posts/check-file-descriptors/" data-toggle="tooltip" data-placement="top"
+          title="Facebook" target="_blank" rel="noopener" aria-label="Facebook">
+          <i class="fa-fw fab fa-facebook-square"></i>
+        </a>
+    
+      
+        <a href="https://telegram.me/share?text=How to get process socket information from /proc - Leontin Chiru&url=https://www.leontin.eu/posts/check-file-descriptors/" data-toggle="tooltip" data-placement="top"
+          title="Telegram" target="_blank" rel="noopener" aria-label="Telegram">
+          <i class="fa-fw fab fa-telegram"></i>
+        </a>
+    
+
+    <i class="fa-fw fas fa-link small" onclick="copyLink('', 'Link copied successfully!')"
+        data-toggle="tooltip" data-placement="top"
+        title="Copy link">
+    </i>
+
+  </span>
+</div>
+
+
+        </div><!-- .post-tail-bottom -->
+
+      </div><!-- div.post-tail -->
+
+    </div> <!-- .post -->
+
+
+  </div> <!-- #post-wrapper -->
+
+  
+
+  
+
+  <!--
+  The Pannel on right side (Desktop views)
+-->
+
+<div id="panel-wrapper" class="col-xl-3 pl-2 text-muted topbar-down">
+
+  <div class="access">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+
+
+  
+    <div id="access-tags">
+      <span>Trending Tags</span>
+      <div class="d-flex flex-wrap mt-3 mb-1 mr-3">
+
+      
+        
+        <a class="post-tag" href="/tags/linux/">linux</a>
+      
+        
+        <a class="post-tag" href="/tags/port/">port</a>
+      
+        
+        <a class="post-tag" href="/tags/esphome/">esphome</a>
+      
+        
+        <a class="post-tag" href="/tags/homeassistant/">homeassistant</a>
+      
+        
+        <a class="post-tag" href="/tags/test/">test</a>
+      
+
+      </div>
+    </div>
+  
+  </div> <!-- .access -->
+
+  
+    <!-- BS-toc.js will be loaded at medium priority -->
+    <script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.js"></script>
+    <div id="toc-wrapper" class="pl-0 pr-4 mb-5">
+      <span class="pl-3 pt-2 mb-2">Contents</span>
+      <nav id="toc" data-toggle="toc"></nav>
+    </div>
+  
+
+</div> <!-- #panel-wrapper -->
+
+
+</div> <!-- .row -->
+
+<div class="row">
+  <div class="col-12 col-lg-11 col-xl-8">
+    <div id="post-extend-wrapper" class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4">
+
+    <!--
+ Recommend the other 3 posts according to the tags and categories of the current post,
+ if the number is not enough, use the other latest posts to supplement.
+-->
+
+<!-- The total size of related posts  -->
+
+
+<!-- An random integer that bigger than 0  -->
+
+
+<!-- Equals to TAG_SCORE / {max_categories_hierarchy}  -->
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+  
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+
+
+
+<!-- Fill with the other newlest posts  -->
+
+
+
+
+
+
+  <div id="related-posts" class="mt-5 mb-2 mb-sm-4">
+    <h3 class="pt-2 mt-1 mb-4 ml-1"
+      data-toc-skip>Further Reading</h3>
+    <div class="card-deck mb-4">
+    
+      
+      
+      <div class="card">
+        <a href="/posts/more-file-descriptors/">
+          <div class="card-body">
+            <!--
+  Date format snippet
+  See: /assets/js/_utils/timeage.js
+-->
+
+
+
+
+
+
+<span class="timeago small"
+  >Aug 11, 2021<i class="unloaded">2021-08-11T00:00:00+03:00</i>
+</span>
+
+            <h3 class="pt-0 mt-1 mb-3" data-toc-skip>Checking more file descriptors</h3>
+            <div class="text-muted small">
+              <p>
+                
+
+
+
+
+
+                In the previous post we looked at how to check network connections for a
+particular process from the /proc filesystem. Now let’s take a look at the
+other file descriptors and see what information w...
+              </p>
+            </div>
+          </div>
+        </a>
+      </div>
+    
+      
+      
+      <div class="card">
+        <a href="/posts/test-ports/">
+          <div class="card-body">
+            <!--
+  Date format snippet
+  See: /assets/js/_utils/timeage.js
+-->
+
+
+
+
+
+
+<span class="timeago small"
+  >Jul 20, 2021<i class="unloaded">2021-07-20T00:00:00+03:00</i>
+</span>
+
+            <h3 class="pt-0 mt-1 mb-3" data-toc-skip>How to test if a port is open and accessible</h3>
+            <div class="text-muted small">
+              <p>
+                
+
+
+
+
+
+                Many times while troubleshooting, we need to test if the network connection to a
+specific service is working or not. The result from such a test can show if I’m
+dealing with a problem on the networ...
+              </p>
+            </div>
+          </div>
+        </a>
+      </div>
+    
+      
+      
+      <div class="card">
+        <a href="/posts/docker-bridge-networks/">
+          <div class="card-body">
+            <!--
+  Date format snippet
+  See: /assets/js/_utils/timeage.js
+-->
+
+
+
+
+
+
+<span class="timeago small"
+  >Aug 19, 2021<i class="unloaded">2021-08-19T00:00:00+03:00</i>
+</span>
+
+            <h3 class="pt-0 mt-1 mb-3" data-toc-skip>Checking the docker bridge networks</h3>
+            <div class="text-muted small">
+              <p>
+                
+
+
+
+
+
+                This is just for fun and practice. Let’s take a look at how docker implements
+the bridge networks.
+
+The environment
+
+I am using the same VM as before, running Ubuntu. I have docker installed with
+o...
+              </p>
+            </div>
+          </div>
+        </a>
+      </div>
+    
+    </div> <!-- .card-deck -->
+  </div> <!-- #related-posts -->
+
+
+
+    <!--
+  Navigation buttons at the bottom of the post.
+-->
+
+<div class="post-navigation d-flex justify-content-between">
+  
+  <a href="/posts/test-ports/" class="btn btn-outline-primary"
+    prompt="Older">
+    <p>How to test if a port is open and accessible</p>
+  </a>
+  
+
+  
+  <a href="/posts/more-file-descriptors/" class="btn btn-outline-primary"
+    prompt="Newer">
+    <p>Checking more file descriptors</p>
+  </a>
+  
+
+</div>
+
+
+    
+
+    
+      <script src="https://utteranc.es/client.js"
+        repo="cleontin/cleontin.github.io"
+	issue-term="pathname"
+	theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+    
+
+    </div> <!-- #post-extend-wrapper -->
+
+  </div> <!-- .col-* -->
+
+</div> <!-- .row -->
+
+
+
+        <!--
+  The Footer
+-->
+
+<footer class="d-flex w-100 justify-content-center">
+  <div class="d-flex justify-content-between align-items-center">
+    <div class="footer-left">
+      <p class="mb-0">
+        © 2025
+        <a href="https://github.com/cleontin">Leontin Chiru</a>.
+        
+        <span data-toggle="tooltip" data-placement="top"
+          title="Except where otherwise noted, the blog posts on this site are licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) License by the author.">Some rights reserved.</span>
+        
+      </p>
+    </div>
+
+    <div class="footer-right">
+      <p class="mb-0">
+        
+
+        
+
+        Powered by 
+          <a href="https://jekyllrb.com" target="_blank" rel="noopener">Jekyll</a>
+         with 
+          <a href="https://github.com/cotes2020/jekyll-theme-chirpy" target="_blank" rel="noopener">Chirpy</a>
+         theme.
+
+      </p>
+    </div>
+
+  </div> <!-- div.d-flex -->
+</footer>
+
+
+      </div>
+
+      <!--
+  The Search results
+-->
+<div id="search-result-wrapper" class="d-flex justify-content-center unloaded">
+  <div class="col-12 col-sm-11 post-content">
+    <div id="search-hints">
+      <h4 class="text-muted mb-4">Trending Tags</h4>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+
+
+      
+        
+        <a class="post-tag" href="/tags/linux/">linux</a>
+      
+        
+        <a class="post-tag" href="/tags/port/">port</a>
+      
+        
+        <a class="post-tag" href="/tags/esphome/">esphome</a>
+      
+        
+        <a class="post-tag" href="/tags/homeassistant/">homeassistant</a>
+      
+        
+        <a class="post-tag" href="/tags/test/">test</a>
+      
+
+    </div>
+    <div id="search-results" class="d-flex flex-wrap justify-content-center text-muted mt-3"></div>
+  </div>
+</div>
+
+
+    </div> <!-- #main-wrapper -->
+
+    
+
+    <div id="mask"></div>
+
+    <a id="back-to-top" href="#" aria-label="back-to-top" class="btn btn-lg btn-box-shadow" role="button">
+      <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!--
+  Jekyll Simple Search loader
+  See: <https://github.com/christian-fei/Simple-Jekyll-Search>
+-->
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/simple-jekyll-search@1.7.3/dest/simple-jekyll-search.min.js"></script>
+
+<script>
+SimpleJekyllSearch({
+  searchInput: document.getElementById('search-input'),
+  resultsContainer: document.getElementById('search-results'),
+  json: '/assets/js/data/search.json',
+  searchResultTemplate: '<div class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-lg-4 pr-lg-4 pl-xl-0 pr-xl-0">  <a href="https://www.leontin.eu{url}">{title}</a>  <div class="post-meta d-flex flex-column flex-sm-row text-muted mt-1 mb-1">    {categories}    {tags}  </div>  <p>{snippet}</p></div>',
+  noResultsText: '<p class="mt-5">Oops! No result founds.</p>',
+  templateMiddleware: function(prop, value, template) {
+    if (prop === 'categories') {
+      if (value === '') {
+        return `${value}`;
+      } else {
+        return `<div class="mr-sm-4"><i class="far fa-folder fa-fw"></i>${value}</div>`;
+      }
+    }
+
+    if (prop === 'tags') {
+      if (value === '') {
+        return `${value}`;
+      } else {
+        return `<div><i class="fa fa-tag fa-fw"></i>${value}</div>`;
+      }
+    }
+  }
+});
+</script>
+
+
+    <!--
+  JS selector for site.
+-->
+
+<!-- layout specified -->
+
+
+  
+
+
+
+  <!-- image lazy-loading & popup -->
+  <script src="https://cdn.jsdelivr.net/combine/npm/lozad/dist/lozad.min.js,npm/magnific-popup@1/dist/jquery.magnific-popup.min.js"></script>
+
+
+
+
+
+<script defer src="/assets/js/dist/post.min.js"></script>
+
+
+
+<!-- commons -->
+
+<script src="https://cdn.jsdelivr.net/combine/npm/popper.js@1.16.1,npm/bootstrap@4/dist/js/bootstrap.min.js"></script>
+
+
+
+
+  </body>
+
+</html>
+

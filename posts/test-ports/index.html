@@ -1,4 +1,680 @@
-<!DOCTYPE html><html lang="en" ><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><meta name="day-prompt" content="days ago"><meta name="hour-prompt" content="hours ago"><meta name="minute-prompt" content="minutes ago"><meta name="justnow-prompt" content="just now"><meta name="generator" content="Jekyll v4.2.0" /><meta property="og:title" content="How to test if a port is open and accessible" /><meta property="og:locale" content="en" /><meta name="description" content="Many times while troubleshooting, we need to test if the network connection to a specific service is working or not. The result from such a test can show if I’m dealing with a problem on the network side or if there’s something wrong with the service." /><meta property="og:description" content="Many times while troubleshooting, we need to test if the network connection to a specific service is working or not. The result from such a test can show if I’m dealing with a problem on the network side or if there’s something wrong with the service." /><link rel="canonical" href="https://www.leontin.eu/posts/test-ports/" /><meta property="og:url" content="https://www.leontin.eu/posts/test-ports/" /><meta property="og:site_name" content="Leontin Chiru" /><meta property="og:type" content="article" /><meta property="article:published_time" content="2021-07-20T00:00:00+03:00" /><meta name="twitter:card" content="summary" /><meta property="twitter:title" content="How to test if a port is open and accessible" /><meta name="twitter:site" content="@twitter_username" /><meta name="google-site-verification" content="google_meta_tag_verification" /> <script type="application/ld+json"> {"headline":"How to test if a port is open and accessible","dateModified":"2021-07-20T00:00:00+03:00","datePublished":"2021-07-20T00:00:00+03:00","description":"Many times while troubleshooting, we need to test if the network connection to a specific service is working or not. The result from such a test can show if I’m dealing with a problem on the network side or if there’s something wrong with the service.","url":"https://www.leontin.eu/posts/test-ports/","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.leontin.eu/posts/test-ports/"},"@context":"https://schema.org"}</script><title>How to test if a port is open and accessible | Leontin Chiru</title><link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png"><link rel="manifest" href="/assets/img/favicons/site.webmanifest"><link rel="shortcut icon" href="/assets/img/favicons/favicon.ico"><meta name="apple-mobile-web-app-title" content="Leontin Chiru"><meta name="application-name" content="Leontin Chiru"><meta name="msapplication-TileColor" content="#da532c"><meta name="msapplication-config" content="/assets/img/favicons/browserconfig.xml"><meta name="theme-color" content="#ffffff"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"><link rel="dns-prefetch" href="https://fonts.gstatic.com"><link rel="preconnect" href="https://www.google-analytics.com" crossorigin="use-credentials"><link rel="dns-prefetch" href="https://www.google-analytics.com"><link rel="preconnect" href="https://www.googletagmanager.com" crossorigin="anonymous"><link rel="dns-prefetch" href="https://www.googletagmanager.com"><link rel="preconnect" href="https://cdn.jsdelivr.net"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.11.2/css/all.min.css"><link rel="stylesheet" href="/assets/css/style.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/magnific-popup@1.1.0/dist/magnific-popup.min.css"> <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script><body data-spy="scroll" data-target="#toc"><div id="sidebar" class="d-flex flex-column align-items-end" lang=""><div class="profile-wrapper text-center"><div id="avatar"> <a href="/" alt="avatar" class="mx-auto"> <img src="/assets/me.png" alt="avatar" onerror="this.style.display='none'"> </a></div><div class="site-title mt-3"> <a href="/">Leontin Chiru</a></div><div class="site-subtitle font-italic">Snippets, cheat-sheets, explanations</div></div><ul class="w-100"><li class="nav-item"> <a href="/" class="nav-link"> <i class="fa-fw fas fa-home ml-xl-3 mr-xl-3 unloaded"></i> <span>HOME</span> </a><li class="nav-item"> <a href="/categories/" class="nav-link"> <i class="fa-fw fas fa-stream ml-xl-3 mr-xl-3 unloaded"></i> <span>CATEGORIES</span> </a><li class="nav-item"> <a href="/tags/" class="nav-link"> <i class="fa-fw fas fa-tags ml-xl-3 mr-xl-3 unloaded"></i> <span>TAGS</span> </a><li class="nav-item"> <a href="/archives/" class="nav-link"> <i class="fa-fw fas fa-archive ml-xl-3 mr-xl-3 unloaded"></i> <span>ARCHIVES</span> </a><li class="nav-item"> <a href="/about/" class="nav-link"> <i class="fa-fw fas fa-info ml-xl-3 mr-xl-3 unloaded"></i> <span>ABOUT</span> </a></ul><div class="sidebar-bottom mt-auto d-flex flex-wrap justify-content-center"> <a href="https://github.com/cleontin" aria-label="github" class="order-3" target="_blank" rel="noopener"> <i class="fab fa-github-alt"></i> </a> <a href="https://twitter.com/twitter_username" aria-label="twitter" class="order-4" target="_blank" rel="noopener"> <i class="fab fa-twitter"></i> </a> <a href=" javascript:location.href = 'mailto:' + ['cleontin','gmail.com'].join('@')" aria-label="email" class="order-5" > <i class="fas fa-envelope"></i> </a> <a href="/feed.xml" aria-label="rss" class="order-6" > <i class="fas fa-rss"></i> </a> <span class="icon-border order-2"></span> <span id="mode-toggle-wrapper" class="order-1"> <i class="mode-toggle fas fa-adjust"></i> <script type="text/javascript"> class ModeToggle { static get MODE_KEY() { return "mode"; } static get DARK_MODE() { return "dark"; } static get LIGHT_MODE() { return "light"; } constructor() { if (this.hasMode) { if (this.isDarkMode) { if (!this.isSysDarkPrefer) { this.setDark(); } } else { if (this.isSysDarkPrefer) { this.setLight(); } } } var self = this; /* always follow the system prefers */ this.sysDarkPrefers.addListener(function() { if (self.hasMode) { if (self.isDarkMode) { if (!self.isSysDarkPrefer) { self.setDark(); } } else { if (self.isSysDarkPrefer) { self.setLight(); } } self.clearMode(); } self.updateMermaid(); }); } /* constructor() */ setDark() { $('html').attr(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE); } setLight() { $('html').attr(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE); } clearMode() { $('html').removeAttr(ModeToggle.MODE_KEY); sessionStorage.removeItem(ModeToggle.MODE_KEY); } get sysDarkPrefers() { return window.matchMedia("(prefers-color-scheme: dark)"); } get isSysDarkPrefer() { return this.sysDarkPrefers.matches; } get isDarkMode() { return this.mode == ModeToggle.DARK_MODE; } get isLightMode() { return this.mode == ModeToggle.LIGHT_MODE; } get hasMode() { return this.mode != null; } get mode() { return sessionStorage.getItem(ModeToggle.MODE_KEY); } /* get the current mode on screen */ get modeStatus() { if (this.isDarkMode || (!this.hasMode && this.isSysDarkPrefer) ) { return ModeToggle.DARK_MODE; } else { return ModeToggle.LIGHT_MODE; } } updateMermaid() { if (typeof mermaid !== "undefined") { let expectedTheme = (this.modeStatus === ModeToggle.DARK_MODE? "dark" : "default"); let config = { theme: expectedTheme }; /* re-render the SVG › <https://github.com/mermaid-js/mermaid/issues/311#issuecomment-332557344> */ $(".mermaid").each(function() { let svgCode = $(this).prev().children().html(); $(this).removeAttr("data-processed"); $(this).html(svgCode); }); mermaid.initialize(config); mermaid.init(undefined, ".mermaid"); } } flipMode() { if (this.hasMode) { if (this.isSysDarkPrefer) { if (this.isLightMode) { this.clearMode(); } else { this.setLight(); } } else { if (this.isDarkMode) { this.clearMode(); } else { this.setDark(); } } } else { if (this.isSysDarkPrefer) { this.setLight(); } else { this.setDark(); } } this.updateMermaid(); } /* flipMode() */ } /* ModeToggle */ let toggle = new ModeToggle(); $(".mode-toggle").click(function() { toggle.flipMode(); }); </script> </span></div></div><div id="topbar-wrapper" class="row justify-content-center topbar-down"><div id="topbar" class="col-11 d-flex h-100 align-items-center justify-content-between"> <span id="breadcrumb"> <span> <a href="/"> Home </a> </span> <span>How to test if a port is open and accessible</span> </span> <i id="sidebar-trigger" class="fas fa-bars fa-fw"></i><div id="topbar-title"> Post</div><i id="search-trigger" class="fas fa-search fa-fw"></i> <span id="search-wrapper" class="align-items-center"> <i class="fas fa-search fa-fw"></i> <input class="form-control" id="search-input" type="search" aria-label="search" autocomplete="off" placeholder="Search..."> <i class="fa fa-times-circle fa-fw" id="search-cleaner"></i> </span> <span id="search-cancel" >Cancel</span></div></div><div id="main-wrapper"><div id="main"><div class="row"><div id="post-wrapper" class="col-12 col-lg-11 col-xl-8"><div class="post pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4"><h1 data-toc-skip>How to test if a port is open and accessible</h1><div class="post-meta text-muted d-flex flex-column"><div> <span class="semi-bold"> Leontin Chiru </span> on <span class="timeago " data-toggle="tooltip" data-placement="bottom" title="Tue, Jul 20, 2021, 12:00 AM +0300" >Jul 20<i class="unloaded">2021-07-20T00:00:00+03:00</i> </span></div><div> <span class="readtime" data-toggle="tooltip" data-placement="bottom" title="1250 words">6 min read</span></div></div><div class="post-content"><p>Many times while troubleshooting, we need to test if the network connection to a specific service is working or not. The result from such a test can show if I’m dealing with a problem on the network side or if there’s something wrong with the service.</p><p>This can be tested for both TCP and UDP ports, but since UDP doesn’t have the mechanism for reliable delivery, we cannot easily differentiate between open UDP ports and filtered ones.</p><h2 id="possible-behaviors">Possible behaviors</h2><p>When testing, we can see three possible behaviors:</p><ol><li>The connection is established<ul><li>this will only be seen with TCP connections that are successful<li>it shows that the port is reachable<li>for UDP we can confirm successful connection only by exchanging messages with the tested service</ul><li>The connection is not immediately rejected, but also we are not seeing any replies<ul><li>this shows that either the requests sent are not reaching the port or that it’s replies are not reaching back to our test process<li>this usually means that some firewall is blocking our packets<li>TCP will wait for some time, then will throw some timeout error<li>for UDP ports no reply is expected, so this could also mean that the connection was successful - we need to send/receive data through this connection to see if it really is successful</ul><li>The connection is rejected<ul><li>this usually happens without any delay<li>it usually means that the server is refusing the connection (service is not running or the firewall is rejecting the traffic)<li>it can also be seen if network firewalls are rejecting the traffic although this is very unlikely</ul></ol><h2 id="test-cases">Test cases</h2><p>I the examples below, we will test three TCP and three UDP ports, showing each possible behavior:</p><ul><li>TCP port <em>22</em> on ip <em>127.0.0.1</em> (localhost)<ul><li>this port is open and will accept connections<li>will result in behavior #3 from above</ul><li>UDP port <em>53</em> on <em>192.168.3.8</em><ul><li>this is a port that will accept connections<li>the behavior is the same as if the port cannot be reached</ul><li>TCP port <em>22</em> on <em>192.168.12.13</em><ul><li>this ip address cannot be reached<li>the commands will return a timeout error as described in #2 from above</ul><li>UDP port <em>53</em> on <em>192.168.12.13</em><ul><li>this host does not exist, so the port cannot be reached<li>because UDP does not send confirmations, we cannot differentiate this from a successful connection</ul><li>TCP port <em>23</em> on <em>127.0.0.1</em><ul><li>the port is reachable but has no service listening on it<li>this will result in connection being rejected - behavior #1 from above</ul><li>UDP port <em>54</em> on <em>192.168.3.8</em><ul><li>this port is reachable but has no service listening on it<li>we will see the connection being rejected as in #1 above</ul></ul><h2 id="example-ouput">Example ouput</h2><h3 id="telnet">Telnet</h3><p>The telnet command is a client for the telnet protocol. Because the telnet protocol is just an unencrypted terminal over a TCP session, we can now use the telnet command to interact with other unencrypted services (HTTP, SMTP) and to check connectivity to any TCP port. Telnet cannot connect to UDP ports.</p><p>Testing the working connection we see the message <code class="language-plaintext highlighter-rouge">Connected to 127.0.0.1.</code> showing that the connection was successful. I am then using <code class="language-plaintext highlighter-rouge">CTRL+]</code> followed by the q (short for quit) command to close the session.</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+<!DOCTYPE html>
+
+
+
+<html lang="en" 
+  
+>
+
+  <!--
+  The Head
+-->
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  
+
+    <!-- i18n for timeago.js -->
+    <meta name="day-prompt" content="days ago">
+    <meta name="hour-prompt" content="hours ago">
+    <meta name="minute-prompt" content="minutes ago">
+    <meta name="justnow-prompt" content="just now">
+
+    
+
+    
+
+  
+
+  <!-- Begin Jekyll SEO tag v2.7.1 -->
+<meta name="generator" content="Jekyll v4.2.0" />
+<meta property="og:title" content="How to test if a port is open and accessible" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Many times while troubleshooting, we need to test if the network connection to a specific service is working or not. The result from such a test can show if I’m dealing with a problem on the network side or if there’s something wrong with the service." />
+<meta property="og:description" content="Many times while troubleshooting, we need to test if the network connection to a specific service is working or not. The result from such a test can show if I’m dealing with a problem on the network side or if there’s something wrong with the service." />
+<link rel="canonical" href="https://www.leontin.eu/posts/test-ports/" />
+<meta property="og:url" content="https://www.leontin.eu/posts/test-ports/" />
+<meta property="og:site_name" content="Leontin Chiru" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-07-20T00:00:00+03:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="How to test if a port is open and accessible" />
+<meta name="twitter:site" content="@twitter_username" />
+<meta name="google-site-verification" content="google_meta_tag_verification" />
+<script type="application/ld+json">
+{"description":"Many times while troubleshooting, we need to test if the network connection to a specific service is working or not. The result from such a test can show if I’m dealing with a problem on the network side or if there’s something wrong with the service.","@type":"BlogPosting","url":"https://www.leontin.eu/posts/test-ports/","headline":"How to test if a port is open and accessible","dateModified":"2021-07-20T00:00:00+03:00","datePublished":"2021-07-20T00:00:00+03:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.leontin.eu/posts/test-ports/"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  <title>How to test if a port is open and accessible | Leontin Chiru
+  </title>
+
+  <!--
+  The Favicons for Web, Android, Microsoft, and iOS (iPhone and iPad) Apps
+  Generated by: https://realfavicongenerator.net/
+-->
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png">
+<link rel="manifest" href="/assets/img/favicons/site.webmanifest">
+<link rel="shortcut icon" href="/assets/img/favicons/favicon.ico">
+<meta name="apple-mobile-web-app-title" content="Leontin Chiru">
+<meta name="application-name" content="Leontin Chiru">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="msapplication-config" content="/assets/img/favicons/browserconfig.xml">
+<meta name="theme-color" content="#ffffff">
+
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+  <!-- GA -->
+  
+
+  <!-- jsDelivr CDN -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.11.2/css/all.min.css">
+
+  <!--
+  CSS selector for site.
+-->
+
+<link rel="stylesheet" href="/assets/css/style.css">
+
+
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.css">
+
+
+
+  <!-- Manific Popup -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/magnific-popup@1.1.0/dist/magnific-popup.min.css">
+
+
+
+  <!-- JavaScript -->
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+
+</head>
+
+
+  <body data-spy="scroll" data-target="#toc">
+
+    <!--
+  The Side Bar
+-->
+
+<div id="sidebar" class="d-flex flex-column align-items-end" lang="">
+  <div class="profile-wrapper text-center">
+    <div id="avatar">
+      <a href="/" alt="avatar" class="mx-auto">
+        
+        <img src="/assets/me.png" alt="avatar" onerror="this.style.display='none'">
+      </a>
+    </div>
+
+    <div class="site-title mt-3">
+      <a href="/">Leontin Chiru</a>
+    </div>
+    <div class="site-subtitle font-italic">Snippets, cheat-sheets, explanations</div>
+
+  </div><!-- .profile-wrapper -->
+
+  <ul class="w-100">
+
+    <!-- home -->
+    <li class="nav-item">
+      <a href="/" class="nav-link">
+        <i class="fa-fw fas fa-home ml-xl-3 mr-xl-3 unloaded"></i>
+        <span>HOME</span>
+      </a>
+    </li>
+    <!-- the real tabs -->
+    
+    <li class="nav-item">
+      <a href="/categories/" class="nav-link">
+        <i class="fa-fw fas fa-stream ml-xl-3 mr-xl-3 unloaded"></i>
+        
+
+        <span>CATEGORIES</span>
+      </a>
+    </li> <!-- .nav-item -->
+    
+    <li class="nav-item">
+      <a href="/tags/" class="nav-link">
+        <i class="fa-fw fas fa-tags ml-xl-3 mr-xl-3 unloaded"></i>
+        
+
+        <span>TAGS</span>
+      </a>
+    </li> <!-- .nav-item -->
+    
+    <li class="nav-item">
+      <a href="/archives/" class="nav-link">
+        <i class="fa-fw fas fa-archive ml-xl-3 mr-xl-3 unloaded"></i>
+        
+
+        <span>ARCHIVES</span>
+      </a>
+    </li> <!-- .nav-item -->
+    
+    <li class="nav-item">
+      <a href="/about/" class="nav-link">
+        <i class="fa-fw fas fa-info ml-xl-3 mr-xl-3 unloaded"></i>
+        
+
+        <span>ABOUT</span>
+      </a>
+    </li> <!-- .nav-item -->
+    
+
+  </ul> <!-- ul.nav.flex-column -->
+
+  <div class="sidebar-bottom mt-auto d-flex flex-wrap justify-content-center">
+
+    
+      
+
+      
+      <a href="https://github.com/cleontin" aria-label="github"
+        class="order-3"
+        target="_blank" rel="noopener">
+        <i class="fab fa-github-alt"></i>
+      </a>
+      
+
+    
+      
+
+      
+      <a href="https://twitter.com/twitter_username" aria-label="twitter"
+        class="order-4"
+        target="_blank" rel="noopener">
+        <i class="fab fa-twitter"></i>
+      </a>
+      
+
+    
+      
+
+      
+      <a href="
+          javascript:location.href = 'mailto:' + ['cleontin','gmail.com'].join('@')" aria-label="email"
+        class="order-5"
+        >
+        <i class="fas fa-envelope"></i>
+      </a>
+      
+
+    
+      
+
+      
+      <a href="/feed.xml" aria-label="rss"
+        class="order-6"
+        >
+        <i class="fas fa-rss"></i>
+      </a>
+      
+
+    
+
+    
+      
+        <span class="icon-border order-2"></span>
+      
+
+      <span id="mode-toggle-wrapper" class="order-1">
+        <!--
+  Switch the mode between dark and light.
+-->
+
+<i class="mode-toggle fas fa-adjust"></i>
+
+<script type="text/javascript">
+
+  class ModeToggle {
+    static get MODE_KEY() { return "mode"; }
+    static get DARK_MODE() { return "dark"; }
+    static get LIGHT_MODE() { return "light"; }
+
+    constructor() {
+      if (this.hasMode) {
+        if (this.isDarkMode) {
+          if (!this.isSysDarkPrefer) {
+            this.setDark();
+          }
+        } else {
+          if (this.isSysDarkPrefer) {
+            this.setLight();
+          }
+        }
+      }
+
+      var self = this;
+
+      /* always follow the system prefers */
+      this.sysDarkPrefers.addListener(function() {
+        if (self.hasMode) {
+          if (self.isDarkMode) {
+            if (!self.isSysDarkPrefer) {
+              self.setDark();
+            }
+
+          } else {
+            if (self.isSysDarkPrefer) {
+              self.setLight();
+            }
+          }
+
+          self.clearMode();
+        }
+
+        self.updateMermaid();
+      });
+
+    } /* constructor() */
+
+
+    setDark() {
+      $('html').attr(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE);
+      sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE);
+    }
+
+    setLight() {
+      $('html').attr(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE);
+      sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE);
+    }
+
+    clearMode() {
+      $('html').removeAttr(ModeToggle.MODE_KEY);
+      sessionStorage.removeItem(ModeToggle.MODE_KEY);
+    }
+
+    get sysDarkPrefers() { return window.matchMedia("(prefers-color-scheme: dark)"); }
+
+    get isSysDarkPrefer() { return this.sysDarkPrefers.matches; }
+
+    get isDarkMode() { return this.mode == ModeToggle.DARK_MODE; }
+
+    get isLightMode() { return this.mode == ModeToggle.LIGHT_MODE; }
+
+    get hasMode() { return this.mode != null; }
+
+    get mode() { return sessionStorage.getItem(ModeToggle.MODE_KEY); }
+
+    /* get the current mode on screen */
+    get modeStatus() {
+      if (this.isDarkMode
+        || (!this.hasMode && this.isSysDarkPrefer) ) {
+        return ModeToggle.DARK_MODE;
+      } else {
+        return ModeToggle.LIGHT_MODE;
+      }
+    }
+
+    updateMermaid() {
+      if (typeof mermaid !== "undefined") {
+        let expectedTheme = (this.modeStatus === ModeToggle.DARK_MODE? "dark" : "default");
+        let config = { theme: expectedTheme };
+
+        /* re-render the SVG › <https://github.com/mermaid-js/mermaid/issues/311#issuecomment-332557344> */
+        $(".mermaid").each(function() {
+          let svgCode = $(this).prev().children().html();
+          $(this).removeAttr("data-processed");
+          $(this).html(svgCode);
+        });
+
+        mermaid.initialize(config);
+        mermaid.init(undefined, ".mermaid");
+      }
+    }
+
+    flipMode() {
+      if (this.hasMode) {
+        if (this.isSysDarkPrefer) {
+          if (this.isLightMode) {
+            this.clearMode();
+          } else {
+            this.setLight();
+          }
+
+        } else {
+          if (this.isDarkMode) {
+            this.clearMode();
+          } else {
+            this.setDark();
+          }
+        }
+
+      } else {
+        if (this.isSysDarkPrefer) {
+          this.setLight();
+        } else {
+          this.setDark();
+        }
+      }
+
+      this.updateMermaid();
+
+    } /* flipMode() */
+
+  } /* ModeToggle */
+
+  let toggle = new ModeToggle();
+
+  $(".mode-toggle").click(function() {
+
+    toggle.flipMode();
+
+  });
+
+</script>
+
+      </span>
+    
+
+  </div> <!-- .sidebar-bottom -->
+
+</div><!-- #sidebar -->
+
+
+    <!--
+  The Top Bar
+-->
+
+<div id="topbar-wrapper" class="row justify-content-center topbar-down">
+  <div id="topbar" class="col-11 d-flex h-100 align-items-center justify-content-between">
+    <span id="breadcrumb">
+
+    
+
+    
+
+      
+
+        
+          <span>
+            <a href="/">
+              Home
+            </a>
+          </span>
+
+        
+
+      
+
+        
+
+      
+
+        
+
+          
+            <span>How to test if a port is open and accessible</span>
+          
+
+        
+
+      
+
+    
+
+    </span><!-- endof #breadcrumb -->
+
+    <i id="sidebar-trigger" class="fas fa-bars fa-fw"></i>
+
+    <div id="topbar-title">
+      Post
+    </div>
+
+    <i id="search-trigger" class="fas fa-search fa-fw"></i>
+    <span id="search-wrapper" class="align-items-center">
+      <i class="fas fa-search fa-fw"></i>
+      <input class="form-control" id="search-input" type="search"
+        aria-label="search" autocomplete="off" placeholder="Search...">
+      <i class="fa fa-times-circle fa-fw" id="search-cleaner"></i>
+    </span>
+    <span id="search-cancel" >Cancel</span>
+  </div>
+
+</div>
+
+
+    <div id="main-wrapper">
+      <div id="main">
+
+        <!--
+  Refactor the HTML structure.
+-->
+
+
+
+<!--
+  In order to allow a wide table to scroll horizontally,
+  we suround the markdown table with `<div class="table-wrapper">` and `</div>`
+-->
+
+
+
+<!--
+  Fixed kramdown code highlight rendering:
+  https://github.com/penibelst/jekyll-compress-html/issues/101
+  https://github.com/penibelst/jekyll-compress-html/issues/71#issuecomment-188144901
+-->
+
+
+
+<!-- Add attribute 'hide-bullet' to the checkbox list -->
+
+
+
+
+<!-- images -->
+
+
+
+<!-- Add lang-badge for code snippets -->
+
+
+
+
+<!-- return -->
+
+
+
+
+
+<div class="row">
+
+  <div id="post-wrapper" class="col-12 col-lg-11 col-xl-8">
+
+    <div class="post pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4">
+
+      <h1 data-toc-skip>How to test if a port is open and accessible</h1>
+
+      <div class="post-meta text-muted d-flex flex-column">
+        <!-- Published date and author -->
+        <div>
+          <span class="semi-bold">
+            Leontin Chiru
+          </span>
+          
+          <!--
+  Date format snippet
+  See: /assets/js/_utils/timeage.js
+-->
+
+
+
+
+
+
+  on
+
+<span class="timeago "
+  
+    data-toggle="tooltip"
+    data-placement="bottom"
+    title="Tue, Jul 20, 2021, 12:00 AM +0300"
+  >Jul 20, 2021<i class="unloaded">2021-07-20T00:00:00+03:00</i>
+</span>
+
+        </div>
+
+        <div>
+          <!-- lastmod -->
+          
+
+          <!-- read time -->
+          <!--
+  Calculate the post's reading time, and display the word count in tooltip
+ -->
+
+
+
+<!-- words per minute  -->
+
+
+
+
+
+
+
+
+
+
+<!-- return element -->
+<span class="readtime" data-toggle="tooltip" data-placement="bottom"
+  title="1250 words">6 min read</span>
+
+
+          <!-- page views -->
+          
+
+        </div>
+
+      </div> <!-- .post-meta -->
+
+      <div class="post-content">
+
+        
+
+        <p>Many times while troubleshooting, we need to test if the network connection to a
+specific service is working or not. The result from such a test can show if I’m
+dealing with a problem on the network side or if there’s something wrong with
+the service.</p>
+
+<p>This can be tested for both TCP and UDP ports, but since UDP doesn’t have the
+mechanism for reliable delivery, we cannot easily differentiate between open UDP
+ports and filtered ones.</p>
+
+<h2 id="possible-behaviors">Possible behaviors</h2>
+
+<p>When testing, we can see three possible behaviors:</p>
+<ol>
+  <li>The connection is established
+    <ul>
+      <li>this will only be seen with TCP connections that are successful</li>
+      <li>it shows that the port is reachable</li>
+      <li>for UDP we can confirm successful connection only by exchanging messages
+with the tested service</li>
+    </ul>
+  </li>
+  <li>The connection is not immediately rejected, but also we are not seeing any
+replies
+    <ul>
+      <li>this shows that either the requests sent are not reaching the port or that
+it’s replies are not reaching back to our test process</li>
+      <li>this usually means that some firewall is blocking our packets</li>
+      <li>TCP will wait for some time, then will throw some timeout error</li>
+      <li>for UDP ports no reply is expected, so this could also mean that the
+connection was successful  - we need to send/receive data through this
+connection to see if it really is successful</li>
+    </ul>
+  </li>
+  <li>The connection is rejected
+    <ul>
+      <li>this usually happens without any delay</li>
+      <li>it usually means that the server is refusing the connection (service is
+not running or the firewall is rejecting the traffic)</li>
+      <li>it can also be seen if network firewalls are rejecting the traffic
+although this is very unlikely</li>
+    </ul>
+  </li>
+</ol>
+
+<h2 id="test-cases">Test cases</h2>
+
+<p>I the examples below, we will test three TCP and three UDP  ports, showing each
+possible behavior:</p>
+<ul>
+  <li>TCP port <em>22</em> on ip <em>127.0.0.1</em> (localhost)
+    <ul>
+      <li>this port is open and will accept connections</li>
+      <li>will result in behavior #3 from above</li>
+    </ul>
+  </li>
+  <li>UDP port <em>53</em> on <em>192.168.3.8</em>
+    <ul>
+      <li>this is a port that will accept connections</li>
+      <li>the behavior is the same as if the port cannot be reached</li>
+    </ul>
+  </li>
+  <li>TCP port <em>22</em> on <em>192.168.12.13</em>
+    <ul>
+      <li>this ip address cannot be reached</li>
+      <li>the commands will return a timeout error as described in  #2 from above</li>
+    </ul>
+  </li>
+  <li>UDP port <em>53</em> on <em>192.168.12.13</em>
+    <ul>
+      <li>this host does not exist, so the port cannot be reached</li>
+      <li>because UDP does not send confirmations, we cannot differentiate this from
+a successful connection</li>
+    </ul>
+  </li>
+  <li>TCP port <em>23</em> on <em>127.0.0.1</em>
+    <ul>
+      <li>the port is reachable but has no service listening on it</li>
+      <li>this will result in connection being rejected - behavior #1 from above</li>
+    </ul>
+  </li>
+  <li>UDP port <em>54</em> on <em>192.168.3.8</em>
+    <ul>
+      <li>this port is reachable but has no service listening on it</li>
+      <li>we will see the connection being rejected as in #1 above</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="example-ouput">Example ouput</h2>
+<h3 id="telnet">Telnet</h3>
+
+<p>The telnet command is a client for the telnet protocol. Because the telnet
+protocol is just an unencrypted terminal over a TCP session, we can now use the
+telnet command to interact with other unencrypted services (HTTP, SMTP) and to
+check connectivity to any TCP port. Telnet cannot connect to UDP ports.</p>
+
+<p>Testing the working connection we see the message <code class="language-plaintext highlighter-rouge">Connected to 127.0.0.1.</code>
+showing that the connection was successful.
+I am then using <code class="language-plaintext highlighter-rouge">CTRL+]</code> followed by the q (short for quit) command to close
+the session.</p>
+
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -8,7 +684,7 @@
 8
 9
 10
-</pre><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# telnet 127.0.0.1 22
+</pre></td><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# telnet 127.0.0.1 22
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
 Escape character is <span class="s1">'^]'</span><span class="nb">.</span>
@@ -18,116 +694,1003 @@ SSH-2.0-OpenSSH_8.1
 telnet&gt; q
 Connection closed.
 <span class="o">[</span>root@localhost ~]#
-</pre></table></code></div></div><p>If we try with the ip and port that are not reachable, the command will wait for the connection for a long time, showing <code class="language-plaintext highlighter-rouge">Trying 192.168.12.13...</code>. It will exit after some time with the message <code class="language-plaintext highlighter-rouge">Connection timed out</code>:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>If we try with the ip and port that are not reachable, the command will wait for 
+the connection for a long time, showing <code class="language-plaintext highlighter-rouge">Trying 192.168.12.13...</code>.
+It will exit after some time with the message <code class="language-plaintext highlighter-rouge">Connection timed out</code>:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# telnet 192.168.12.13 22
+</pre></td><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# telnet 192.168.12.13 22
 Trying 192.168.12.13...
 telnet: connect to address 192.168.12.13: Connection timed out
 <span class="o">[</span>root@localhost ~]#
-</pre></table></code></div></div><p>For the connection that is rejected, <code class="language-plaintext highlighter-rouge">Connection refused</code> will be shown:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>For the connection that is rejected, <code class="language-plaintext highlighter-rouge">Connection refused</code> will be shown:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# telnet 127.0.0.1 23
+</pre></td><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# telnet 127.0.0.1 23
 Trying 127.0.0.1...
 telnet: connect to address 127.0.0.1: Connection refused
 <span class="o">[</span>root@localhost ~]#
-</pre></table></code></div></div><h3 id="ncat">Ncat</h3><p>Ncat (nc command) is a tool used to read and write data from the network. It has a lot of features and can be used in very complex scenarios.</p><p>The <code class="language-plaintext highlighter-rouge">-z</code> option of the <strong>nc</strong> command is used for testing a connection. After the command executes we have to examine the exit code to see if the connection was successful or not. To test UDP ports, we must use the <code class="language-plaintext highlighter-rouge">-u</code> option.</p><p>When testing the reachable port, the nc command exits immediately and the exit code <code class="language-plaintext highlighter-rouge">0</code> shows a success:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<h3 id="ncat">Ncat</h3>
+
+<p>Ncat (nc command) is a tool used to read and write data from the network.
+It has a lot of features and can be used in very complex scenarios.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">-z</code> option of the <strong>nc</strong> command is used for testing a connection.
+After the command executes we have to examine the exit code to see if the
+connection was successful or not.
+To test UDP ports, we must use the <code class="language-plaintext highlighter-rouge">-u</code> option.</p>
+
+<p>When testing the reachable port, the nc command exits immediately and the exit
+code <code class="language-plaintext highlighter-rouge">0</code> shows a success:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# nc <span class="nt">-z</span> 127.0.0.1 22
+</pre></td><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# nc <span class="nt">-z</span> 127.0.0.1 22
 <span class="o">[</span>root@localhost ~]# <span class="nb">echo</span> <span class="nv">$?</span>
 0
 <span class="o">[</span>root@localhost ~]#
-</pre></table></code></div></div><p>Similar output for reachable UDP ports:</p><div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>Similar output for reachable UDP ports:</p>
+<div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre>[root@localhost ~]# nc -zu 192.168.3.8 53
+</pre></td><td class="rouge-code"><pre>[root@localhost ~]# nc -zu 192.168.3.8 53
 [root@localhost ~]# echo $?
 0
 [root@localhost ~]#
-</pre></table></code></div></div><p>When testing the port that is not reachable, the command takes a few seconds to execute (10s in my case) and the exit code shows there was an error.</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>When testing the port that is not reachable, the command takes a few seconds to execute (10s in my case) and the exit code shows there was an error.</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# nc <span class="nt">-z</span> 192.168.12.13 23
+</pre></td><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# nc <span class="nt">-z</span> 192.168.12.13 23
 <span class="o">[</span>root@localhost ~]# <span class="nb">echo</span> <span class="nv">$?</span>
 1
 <span class="o">[</span>root@localhost ~]#
-</pre></table></code></div></div><p>Because UDP does not send a reply on successful connection, a port that is not reachable cannot be distinguished from one that is reachable. For this unreachable port we see a success code:</p><div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+<p>Because UDP does not send a reply on successful connection, a port that is not 
+reachable cannot be distinguished from one that is reachable. For this
+unreachable port we see a success code:</p>
+<div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre>[root@localhost ~]# nc -zu 192.168.12.13 53
+</pre></td><td class="rouge-code"><pre>[root@localhost ~]# nc -zu 192.168.12.13 53
 [root@localhost ~]# echo $?
 0
 [root@localhost ~]#
-</pre></table></code></div></div><p>If the connection is refused, the command exits immediately and the exit code also shows an error.</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>If the connection is refused, the command exits immediately and the exit code
+also shows an error.</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# nc <span class="nt">-z</span> 127.0.0.1 23
+</pre></td><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# nc <span class="nt">-z</span> 127.0.0.1 23
 <span class="o">[</span>root@localhost ~]# <span class="nb">echo</span> <span class="nv">$?</span>
 1
 <span class="o">[</span>root@localhost ~]#
-</pre></table></code></div></div><p>For refused connections we can see the error code even for UDP:</p><div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+<p>For refused connections we can see the error code even for UDP:</p>
+<div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre>[root@localhost ~]# nc -zu 192.168.3.8 54
+</pre></td><td class="rouge-code"><pre>[root@localhost ~]# nc -zu 192.168.3.8 54
 [root@localhost ~]# echo $?
 1
 [root@localhost ~]#
-</pre></table></code></div></div><p>When testing TCP ports with nc, the only difference between a timed out connection and a refused one is the time it takes for the command to execute.</p><h3 id="bash-redirections">Bash redirections</h3><p>Bash has a special way of handling <code class="language-plaintext highlighter-rouge">/dev/tcp/&lt;ip_address&gt;/&lt;port&gt;</code> files when they are used in redirection. Writing to such a file will actually open a TCP connection to that ip address and port and will send the data over this connection.</p><p>We can use this to test the connection to a specific port by sending some data to it and checking the result.</p><p>For a reachable port, the command exits immediately with a success exit code:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>When testing TCP ports with nc, the only difference between a timed out
+connection and a refused one is the time it takes for the command to execute.</p>
+
+<h3 id="bash-redirections">Bash redirections</h3>
+
+<p>Bash has a special way of handling <code class="language-plaintext highlighter-rouge">/dev/tcp/&lt;ip_address&gt;/&lt;port&gt;</code> files when
+they are used in redirection. Writing to such a file will actually open a TCP
+connection to that ip address and port and will send the data over this
+connection.</p>
+
+<p>We can use this to test the connection to a specific port by sending some data
+to it and checking the result.</p>
+
+<p>For a reachable port, the command exits immediately with a success exit code:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# <span class="nb">echo </span>x <span class="o">&gt;</span> /dev/tcp/127.0.0.1/22
+</pre></td><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# <span class="nb">echo </span>x <span class="o">&gt;</span> /dev/tcp/127.0.0.1/22
 <span class="o">[</span>root@localhost ~]# <span class="nb">echo</span> <span class="nv">$?</span>
 0
 <span class="o">[</span>root@localhost ~]#
-</pre></table></code></div></div><p>Similar for the UDP port:</p><div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+<p>Similar for the UDP port:</p>
+<div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre>[root@localhost ~]# echo x &gt; /dev/udp/192.168.3.8/53
+</pre></td><td class="rouge-code"><pre>[root@localhost ~]# echo x &gt; /dev/udp/192.168.3.8/53
 [root@localhost ~]# echo $?
 0
 [root@localhost ~]#
-</pre></table></code></div></div><p>When the port is not reachable, the command takes some time to execute and then exits with a <code class="language-plaintext highlighter-rouge">Connection timed out</code> message:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>When the port is not reachable, the command takes some time to execute and then
+exits with a <code class="language-plaintext highlighter-rouge">Connection timed out</code> message:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# <span class="nb">echo </span>x <span class="o">&gt;</span> /dev/tcp/192.168.12.13/23
+</pre></td><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# <span class="nb">echo </span>x <span class="o">&gt;</span> /dev/tcp/192.168.12.13/23
 <span class="nt">-bash</span>: connect: Connection timed out
 <span class="nt">-bash</span>: /dev/tcp/192.168.12.13/23: Connection timed out
 <span class="o">[</span>root@localhost ~]#
-</pre></table></code></div></div><p>The unreachable UDP port looks just like the reachable one:</p><div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>The unreachable UDP port looks just like the reachable one:</p>
+<div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre>[root@localhost ~]# echo x &gt; /dev/udp/192.168.12.13/53
+</pre></td><td class="rouge-code"><pre>[root@localhost ~]# echo x &gt; /dev/udp/192.168.12.13/53
 [root@localhost ~]# echo $?
 0
 [root@localhost ~]#
-</pre></table></code></div></div><p>When the connection is refused, it exits immediately with the message: <code class="language-plaintext highlighter-rouge">Connection refused</code>:</p><div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>When the connection is refused, it exits immediately with the message:
+<code class="language-plaintext highlighter-rouge">Connection refused</code>:</p>
+<div lang="bash" class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# <span class="nb">echo </span>x <span class="o">&gt;</span> /dev/tcp/127.0.0.1/23
+</pre></td><td class="rouge-code"><pre><span class="o">[</span>root@localhost ~]# <span class="nb">echo </span>x <span class="o">&gt;</span> /dev/tcp/127.0.0.1/23
 <span class="nt">-bash</span>: connect: Connection refused
 <span class="nt">-bash</span>: /dev/tcp/127.0.0.1/23: Connection refused
 <span class="o">[</span>root@localhost ~]#
-</pre></table></code></div></div><p>Strangely, for the refused UDP connection we don’t see any error. I don’t know how to explain this right now:</p><div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>Strangely, for the refused UDP connection we don’t see any error. I don’t know how to explain this right now:</p>
+<div lang="plaintext" class="language-plaintext highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
 2
 3
 4
-</pre><td class="rouge-code"><pre>[root@localhost ~]# echo x &gt; /dev/udp/192.168.3.8/54
+</pre></td><td class="rouge-code"><pre>[root@localhost ~]# echo x &gt; /dev/udp/192.168.3.8/54
 [root@localhost ~]# echo $?
 0
 [root@localhost ~]#
-</pre></table></code></div></div><p>It looks like bash redirection is not useful at all in testing UDP ports. I will try to understand this and update this post.</p></div><div class="post-tail-wrapper text-muted"><div class="post-meta mb-3"> <i class="far fa-folder-open fa-fw mr-1"></i> <a href='/categories/howtos/'>Howtos</a></div><div class="post-tags"> <i class="fa fa-tags fa-fw mr-1"></i> <a href="/tags/test/" class="post-tag no-text-decoration" >test</a> <a href="/tags/port/" class="post-tag no-text-decoration" >port</a></div><div class="post-tail-bottom d-flex justify-content-between align-items-center mt-3 pt-5 pb-2"><div class="license-wrapper"> This post is licensed under <a href="https://creativecommons.org/licenses/by/4.0/"> CC BY 4.0 </a> by the author.</div><div class="share-wrapper"> <span class="share-label text-muted mr-1">Share</span> <span class="share-icons"> <a href="https://twitter.com/intent/tweet?text=How to test if a port is open and accessible - Leontin Chiru&url=https://www.leontin.eu/posts/test-ports/" data-toggle="tooltip" data-placement="top" title="Twitter" target="_blank" rel="noopener" aria-label="Twitter"> <i class="fa-fw fab fa-twitter"></i> </a> <a href="https://www.facebook.com/sharer/sharer.php?title=How to test if a port is open and accessible - Leontin Chiru&u=https://www.leontin.eu/posts/test-ports/" data-toggle="tooltip" data-placement="top" title="Facebook" target="_blank" rel="noopener" aria-label="Facebook"> <i class="fa-fw fab fa-facebook-square"></i> </a> <a href="https://telegram.me/share?text=How to test if a port is open and accessible - Leontin Chiru&url=https://www.leontin.eu/posts/test-ports/" data-toggle="tooltip" data-placement="top" title="Telegram" target="_blank" rel="noopener" aria-label="Telegram"> <i class="fa-fw fab fa-telegram"></i> </a> <i class="fa-fw fas fa-link small" onclick="copyLink('', 'Link copied successfully!')" data-toggle="tooltip" data-placement="top" title="Copy link"> </i> </span></div></div></div></div></div><div id="panel-wrapper" class="col-xl-3 pl-2 text-muted topbar-down"><div class="access"><div id="access-tags"> <span>Trending Tags</span><div class="d-flex flex-wrap mt-3 mb-1 mr-3"> <a class="post-tag" href="/tags/linux/">linux</a> <a class="post-tag" href="/tags/port/">port</a> <a class="post-tag" href="/tags/test/">test</a></div></div></div><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.js"></script><div id="toc-wrapper" class="pl-0 pr-4 mb-5"> <span class="pl-3 pt-2 mb-2">Contents</span><nav id="toc" data-toggle="toc"></nav></div></div></div><div class="row"><div class="col-12 col-lg-11 col-xl-8"><div id="post-extend-wrapper" class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4"><div id="related-posts" class="mt-5 mb-2 mb-sm-4"><h3 class="pt-2 mt-1 mb-4 ml-1" data-toc-skip>Further Reading</h3><div class="card-deck mb-4"><div class="card"> <a href="/posts/docker-bridge-networks/"><div class="card-body"> <span class="timeago small" >Aug 19<i class="unloaded">2021-08-19T00:00:00+03:00</i> </span><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Checking the docker bridge networks</h3><div class="text-muted small"><p> This is just for fun and practice. Let’s take a look at how docker implements the bridge networks. The environment I am using the same VM as before, running Ubuntu. I have docker installed with o...</p></div></div></a></div><div class="card"> <a href="/posts/check-file-descriptors/"><div class="card-body"> <span class="timeago small" >Aug 10<i class="unloaded">2021-08-10T00:00:00+03:00</i> </span><h3 class="pt-0 mt-1 mb-3" data-toc-skip>How to get process socket information from /proc</h3><div class="text-muted small"><p> When I want to see the connections opened by some process I normally use commands like lsof and ss. But these commands are not always available. In these scenarios, I found that it’s not that diffi...</p></div></div></a></div><div class="card"> <a href="/posts/more-file-descriptors/"><div class="card-body"> <span class="timeago small" >Aug 11<i class="unloaded">2021-08-11T00:00:00+03:00</i> </span><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Checking more file descriptors</h3><div class="text-muted small"><p> In the previous post we looked at how to check network connections for a particular process from the /proc filesystem. Now let’s take a look at the other file descriptors and see what information w...</p></div></div></a></div></div></div><div class="post-navigation d-flex justify-content-between"> <span class="btn btn-outline-primary disabled" prompt="Older"><p>-</p></span> <a href="/posts/check-file-descriptors/" class="btn btn-outline-primary" prompt="Newer"><p>How to get process socket information from /proc</p></a></div><script src="https://utteranc.es/client.js" repo="cleontin/cleontin.github.io" issue-term="pathname" theme="preferred-color-scheme" crossorigin="anonymous" async> </script></div></div></div><footer class="d-flex w-100 justify-content-center"><div class="d-flex justify-content-between align-items-center"><div class="footer-left"><p class="mb-0"> © 2021 <a href="https://github.com/cleontin">Leontin Chiru</a>. <span data-toggle="tooltip" data-placement="top" title="Except where otherwise noted, the blog posts on this site are licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) License by the author.">Some rights reserved.</span></p></div><div class="footer-right"><p class="mb-0"> Powered by <a href="https://jekyllrb.com" target="_blank" rel="noopener">Jekyll</a> with <a href="https://github.com/cotes2020/jekyll-theme-chirpy" target="_blank" rel="noopener">Chirpy</a> theme.</p></div></div></footer></div><div id="search-result-wrapper" class="d-flex justify-content-center unloaded"><div class="col-12 col-sm-11 post-content"><div id="search-hints"><h4 class="text-muted mb-4">Trending Tags</h4><a class="post-tag" href="/tags/linux/">linux</a> <a class="post-tag" href="/tags/port/">port</a> <a class="post-tag" href="/tags/test/">test</a></div><div id="search-results" class="d-flex flex-wrap justify-content-center text-muted mt-3"></div></div></div></div><div id="mask"></div><a id="back-to-top" href="#" aria-label="back-to-top" class="btn btn-lg btn-box-shadow" role="button"> <i class="fas fa-angle-up"></i> </a> <script src="https://cdn.jsdelivr.net/npm/simple-jekyll-search@1.7.3/dest/simple-jekyll-search.min.js"></script> <script> SimpleJekyllSearch({ searchInput: document.getElementById('search-input'), resultsContainer: document.getElementById('search-results'), json: '/assets/js/data/search.json', searchResultTemplate: '<div class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-lg-4 pr-lg-4 pl-xl-0 pr-xl-0"> <a href="https://www.leontin.eu{url}">{title}</a><div class="post-meta d-flex flex-column flex-sm-row text-muted mt-1 mb-1"> {categories} {tags}</div><p>{snippet}</p></div>', noResultsText: '<p class="mt-5">Oops! No result founds.</p>', templateMiddleware: function(prop, value, template) { if (prop === 'categories') { if (value === '') { return `${value}`; } else { return `<div class="mr-sm-4"><i class="far fa-folder fa-fw"></i>${value}</div>`; } } if (prop === 'tags') { if (value === '') { return `${value}`; } else { return `<div><i class="fa fa-tag fa-fw"></i>${value}</div>`; } } } }); </script> <script src="https://cdn.jsdelivr.net/combine/npm/lozad/dist/lozad.min.js,npm/magnific-popup@1/dist/jquery.magnific-popup.min.js"></script> <script defer src="/assets/js/dist/post.min.js"></script> <script src="https://cdn.jsdelivr.net/combine/npm/popper.js@1.16.1,npm/bootstrap@4/dist/js/bootstrap.min.js"></script> <script defer src="/app.js"></script> <script defer src="https://www.googletagmanager.com/gtag/js?id=G-VXCTSGEL7Y"></script> <script> document.addEventListener("DOMContentLoaded", function(event) { window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-VXCTSGEL7Y'); }); </script>
+</pre></td></tr></tbody></table></code></div></div>
+
+<p>It looks like bash redirection is not useful at all in testing UDP ports. I will try to understand this and update this post.</p>
+
+
+      </div>
+
+      <div class="post-tail-wrapper text-muted">
+
+        <!-- categories -->
+        
+
+        <div class="post-meta mb-3">
+          <i class="far fa-folder-open fa-fw mr-1"></i>
+          
+            <a href='/categories/howtos/'>Howtos</a>
+        </div>
+        
+
+        <!-- tags -->
+        
+        <div class="post-tags">
+          <i class="fa fa-tags fa-fw mr-1"></i>
+          
+          <a href="/tags/test/"
+            class="post-tag no-text-decoration" >test</a>
+          
+          <a href="/tags/port/"
+            class="post-tag no-text-decoration" >port</a>
+          
+          </div>
+        
+
+        <div class="post-tail-bottom
+          d-flex justify-content-between align-items-center mt-3 pt-5 pb-2">
+          <div class="license-wrapper">
+          
+            
+            This post is licensed under 
+            <a href="https://creativecommons.org/licenses/by/4.0/">
+              CC BY 4.0
+            </a>
+             by the author.
+          
+          </div>
+
+          <!--
+ Post sharing snippet
+-->
+
+<div class="share-wrapper">
+  <span class="share-label text-muted mr-1">Share</span>
+  <span class="share-icons">
+    
+    
+
+    
+      
+        <a href="https://twitter.com/intent/tweet?text=How to test if a port is open and accessible - Leontin Chiru&url=https://www.leontin.eu/posts/test-ports/" data-toggle="tooltip" data-placement="top"
+          title="Twitter" target="_blank" rel="noopener" aria-label="Twitter">
+          <i class="fa-fw fab fa-twitter"></i>
+        </a>
+    
+      
+        <a href="https://www.facebook.com/sharer/sharer.php?title=How to test if a port is open and accessible - Leontin Chiru&u=https://www.leontin.eu/posts/test-ports/" data-toggle="tooltip" data-placement="top"
+          title="Facebook" target="_blank" rel="noopener" aria-label="Facebook">
+          <i class="fa-fw fab fa-facebook-square"></i>
+        </a>
+    
+      
+        <a href="https://telegram.me/share?text=How to test if a port is open and accessible - Leontin Chiru&url=https://www.leontin.eu/posts/test-ports/" data-toggle="tooltip" data-placement="top"
+          title="Telegram" target="_blank" rel="noopener" aria-label="Telegram">
+          <i class="fa-fw fab fa-telegram"></i>
+        </a>
+    
+
+    <i class="fa-fw fas fa-link small" onclick="copyLink('', 'Link copied successfully!')"
+        data-toggle="tooltip" data-placement="top"
+        title="Copy link">
+    </i>
+
+  </span>
+</div>
+
+
+        </div><!-- .post-tail-bottom -->
+
+      </div><!-- div.post-tail -->
+
+    </div> <!-- .post -->
+
+
+  </div> <!-- #post-wrapper -->
+
+  
+
+  
+
+  <!--
+  The Pannel on right side (Desktop views)
+-->
+
+<div id="panel-wrapper" class="col-xl-3 pl-2 text-muted topbar-down">
+
+  <div class="access">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+
+
+  
+    <div id="access-tags">
+      <span>Trending Tags</span>
+      <div class="d-flex flex-wrap mt-3 mb-1 mr-3">
+
+      
+        
+        <a class="post-tag" href="/tags/linux/">linux</a>
+      
+        
+        <a class="post-tag" href="/tags/port/">port</a>
+      
+        
+        <a class="post-tag" href="/tags/esphome/">esphome</a>
+      
+        
+        <a class="post-tag" href="/tags/homeassistant/">homeassistant</a>
+      
+        
+        <a class="post-tag" href="/tags/test/">test</a>
+      
+
+      </div>
+    </div>
+  
+  </div> <!-- .access -->
+
+  
+    <!-- BS-toc.js will be loaded at medium priority -->
+    <script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.js"></script>
+    <div id="toc-wrapper" class="pl-0 pr-4 mb-5">
+      <span class="pl-3 pt-2 mb-2">Contents</span>
+      <nav id="toc" data-toggle="toc"></nav>
+    </div>
+  
+
+</div> <!-- #panel-wrapper -->
+
+
+</div> <!-- .row -->
+
+<div class="row">
+  <div class="col-12 col-lg-11 col-xl-8">
+    <div id="post-extend-wrapper" class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4">
+
+    <!--
+ Recommend the other 3 posts according to the tags and categories of the current post,
+ if the number is not enough, use the other latest posts to supplement.
+-->
+
+<!-- The total size of related posts  -->
+
+
+<!-- An random integer that bigger than 0  -->
+
+
+<!-- Equals to TAG_SCORE / {max_categories_hierarchy}  -->
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+  
+    
+
+
+
+
+
+
+<!-- Fill with the other newlest posts  -->
+
+
+
+
+
+
+  <div id="related-posts" class="mt-5 mb-2 mb-sm-4">
+    <h3 class="pt-2 mt-1 mb-4 ml-1"
+      data-toc-skip>Further Reading</h3>
+    <div class="card-deck mb-4">
+    
+      
+      
+      <div class="card">
+        <a href="/posts/docker-bridge-networks/">
+          <div class="card-body">
+            <!--
+  Date format snippet
+  See: /assets/js/_utils/timeage.js
+-->
+
+
+
+
+
+
+<span class="timeago small"
+  >Aug 19, 2021<i class="unloaded">2021-08-19T00:00:00+03:00</i>
+</span>
+
+            <h3 class="pt-0 mt-1 mb-3" data-toc-skip>Checking the docker bridge networks</h3>
+            <div class="text-muted small">
+              <p>
+                
+
+
+
+
+
+                This is just for fun and practice. Let’s take a look at how docker implements
+the bridge networks.
+
+The environment
+
+I am using the same VM as before, running Ubuntu. I have docker installed with
+o...
+              </p>
+            </div>
+          </div>
+        </a>
+      </div>
+    
+      
+      
+      <div class="card">
+        <a href="/posts/check-file-descriptors/">
+          <div class="card-body">
+            <!--
+  Date format snippet
+  See: /assets/js/_utils/timeage.js
+-->
+
+
+
+
+
+
+<span class="timeago small"
+  >Aug 10, 2021<i class="unloaded">2021-08-10T00:00:00+03:00</i>
+</span>
+
+            <h3 class="pt-0 mt-1 mb-3" data-toc-skip>How to get process socket information from /proc</h3>
+            <div class="text-muted small">
+              <p>
+                
+
+
+
+
+
+                When I want to see the connections opened by some process I normally use
+commands like lsof and ss. But these commands are not always available.
+In these scenarios, I found that it’s not that diffi...
+              </p>
+            </div>
+          </div>
+        </a>
+      </div>
+    
+      
+      
+      <div class="card">
+        <a href="/posts/more-file-descriptors/">
+          <div class="card-body">
+            <!--
+  Date format snippet
+  See: /assets/js/_utils/timeage.js
+-->
+
+
+
+
+
+
+<span class="timeago small"
+  >Aug 11, 2021<i class="unloaded">2021-08-11T00:00:00+03:00</i>
+</span>
+
+            <h3 class="pt-0 mt-1 mb-3" data-toc-skip>Checking more file descriptors</h3>
+            <div class="text-muted small">
+              <p>
+                
+
+
+
+
+
+                In the previous post we looked at how to check network connections for a
+particular process from the /proc filesystem. Now let’s take a look at the
+other file descriptors and see what information w...
+              </p>
+            </div>
+          </div>
+        </a>
+      </div>
+    
+    </div> <!-- .card-deck -->
+  </div> <!-- #related-posts -->
+
+
+
+    <!--
+  Navigation buttons at the bottom of the post.
+-->
+
+<div class="post-navigation d-flex justify-content-between">
+  
+  <span class="btn btn-outline-primary disabled"
+    prompt="Older">
+    <p>-</p>
+  </span>
+  
+
+  
+  <a href="/posts/check-file-descriptors/" class="btn btn-outline-primary"
+    prompt="Newer">
+    <p>How to get process socket information from /proc</p>
+  </a>
+  
+
+</div>
+
+
+    
+
+    
+      <script src="https://utteranc.es/client.js"
+        repo="cleontin/cleontin.github.io"
+	issue-term="pathname"
+	theme="preferred-color-scheme"
+        crossorigin="anonymous"
+        async>
+</script>
+
+    
+
+    </div> <!-- #post-extend-wrapper -->
+
+  </div> <!-- .col-* -->
+
+</div> <!-- .row -->
+
+
+
+        <!--
+  The Footer
+-->
+
+<footer class="d-flex w-100 justify-content-center">
+  <div class="d-flex justify-content-between align-items-center">
+    <div class="footer-left">
+      <p class="mb-0">
+        © 2025
+        <a href="https://github.com/cleontin">Leontin Chiru</a>.
+        
+        <span data-toggle="tooltip" data-placement="top"
+          title="Except where otherwise noted, the blog posts on this site are licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) License by the author.">Some rights reserved.</span>
+        
+      </p>
+    </div>
+
+    <div class="footer-right">
+      <p class="mb-0">
+        
+
+        
+
+        Powered by 
+          <a href="https://jekyllrb.com" target="_blank" rel="noopener">Jekyll</a>
+         with 
+          <a href="https://github.com/cotes2020/jekyll-theme-chirpy" target="_blank" rel="noopener">Chirpy</a>
+         theme.
+
+      </p>
+    </div>
+
+  </div> <!-- div.d-flex -->
+</footer>
+
+
+      </div>
+
+      <!--
+  The Search results
+-->
+<div id="search-result-wrapper" class="d-flex justify-content-center unloaded">
+  <div class="col-12 col-sm-11 post-content">
+    <div id="search-hints">
+      <h4 class="text-muted mb-4">Trending Tags</h4>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+      
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+  
+    
+    
+    
+    
+      
+        
+        
+
+
+
+      
+        
+        <a class="post-tag" href="/tags/linux/">linux</a>
+      
+        
+        <a class="post-tag" href="/tags/port/">port</a>
+      
+        
+        <a class="post-tag" href="/tags/esphome/">esphome</a>
+      
+        
+        <a class="post-tag" href="/tags/homeassistant/">homeassistant</a>
+      
+        
+        <a class="post-tag" href="/tags/test/">test</a>
+      
+
+    </div>
+    <div id="search-results" class="d-flex flex-wrap justify-content-center text-muted mt-3"></div>
+  </div>
+</div>
+
+
+    </div> <!-- #main-wrapper -->
+
+    
+
+    <div id="mask"></div>
+
+    <a id="back-to-top" href="#" aria-label="back-to-top" class="btn btn-lg btn-box-shadow" role="button">
+      <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!--
+  Jekyll Simple Search loader
+  See: <https://github.com/christian-fei/Simple-Jekyll-Search>
+-->
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/simple-jekyll-search@1.7.3/dest/simple-jekyll-search.min.js"></script>
+
+<script>
+SimpleJekyllSearch({
+  searchInput: document.getElementById('search-input'),
+  resultsContainer: document.getElementById('search-results'),
+  json: '/assets/js/data/search.json',
+  searchResultTemplate: '<div class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-lg-4 pr-lg-4 pl-xl-0 pr-xl-0">  <a href="https://www.leontin.eu{url}">{title}</a>  <div class="post-meta d-flex flex-column flex-sm-row text-muted mt-1 mb-1">    {categories}    {tags}  </div>  <p>{snippet}</p></div>',
+  noResultsText: '<p class="mt-5">Oops! No result founds.</p>',
+  templateMiddleware: function(prop, value, template) {
+    if (prop === 'categories') {
+      if (value === '') {
+        return `${value}`;
+      } else {
+        return `<div class="mr-sm-4"><i class="far fa-folder fa-fw"></i>${value}</div>`;
+      }
+    }
+
+    if (prop === 'tags') {
+      if (value === '') {
+        return `${value}`;
+      } else {
+        return `<div><i class="fa fa-tag fa-fw"></i>${value}</div>`;
+      }
+    }
+  }
+});
+</script>
+
+
+    <!--
+  JS selector for site.
+-->
+
+<!-- layout specified -->
+
+
+  
+
+
+
+  <!-- image lazy-loading & popup -->
+  <script src="https://cdn.jsdelivr.net/combine/npm/lozad/dist/lozad.min.js,npm/magnific-popup@1/dist/jquery.magnific-popup.min.js"></script>
+
+
+
+
+
+<script defer src="/assets/js/dist/post.min.js"></script>
+
+
+
+<!-- commons -->
+
+<script src="https://cdn.jsdelivr.net/combine/npm/popper.js@1.16.1,npm/bootstrap@4/dist/js/bootstrap.min.js"></script>
+
+
+
+
+  </body>
+
+</html>
+
