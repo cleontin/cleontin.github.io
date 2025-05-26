@@ -1015,12 +1015,12 @@
 
 <p>Here’s a rough schematic of how it all hooks up:
 <img data-proofer-ignore data-src="/assets/img/hayward_y.png" alt="Hayward Y Cable" />
-<em>Y cable conections</em></p>
+<em>Y cable connections</em></p>
 
 <p><img data-proofer-ignore data-src="/assets/img/hayward_schematic.png" alt="Hayward Schematic" />
 <em>Schematic diagram</em></p>
 
-<p>As with any other device, <strong>disconnect it from mains power before working on it</strong>. Making and breaking connections while powered can lead to parts damage and those will be expensive to replace. Touching a live wire while working on it could lead to a painfull stop of all your future projects.</p>
+<p>As with any other device, <strong>disconnect it from mains power before working on it</strong>. Making and breaking connections while powered can lead to parts damage and those will be expensive to replace. Touching a live wire while working on it could lead to a painful stop of all your future projects.</p>
 
 <p>Here’s what my setup looks like—not very clean for now, but it works! I’ll get around to putting it in a proper enclosure soon. For now it’s tightly packed and placed inside the heat pump.</p>
 
@@ -1196,7 +1196,7 @@
       <td>1076</td>
       <td>Silent time schedule active</td>
       <td>0=OFF, 1=ON</td>
-      <td>Changing this from ESP82266 also changes 1072</td>
+      <td>Changing this from ESP8266 also changes 1072</td>
     </tr>
     <tr>
       <td>1135</td>
@@ -1441,19 +1441,19 @@
     <tr>
       <td>3015</td>
       <td>Hour</td>
-      <td>BDC coded</td>
+      <td>BCD coded</td>
       <td> </td>
     </tr>
     <tr>
       <td>3016</td>
       <td>Minutes</td>
-      <td>BDC coded</td>
+      <td>BCD coded</td>
       <td> </td>
     </tr>
     <tr>
       <td>3017</td>
       <td>Seconds</td>
-      <td>BDC coded</td>
+      <td>BCD coded</td>
       <td> </td>
     </tr>
   </tbody>
@@ -1465,7 +1465,7 @@
 
 <p>To use the hayward component, you need to load it alongside a modified Modbus component as external components in ESPHome. I tweaked the Modbus code to sniff traffic, and for now, my component relies on that logic. I’m hoping to make it work with the standard Modbus component down the line. You’ll also need the uart component for communication between the ESP8266 and the RS485 module, and the time component to handle status update timestamps.</p>
 
-<p>The uart setup uses the TX and RX pins you wired to the RS485 module (mine are on pins 1 and 3). If you’re using the logger component in ESPHome, set its baud_rate to 0 to avoid conflicts with the UART port. The Modbus setup needs a flow_control_pin (I used pin 2, tied to DE/RE on the RS485 module) and is configured to act as a server. The haywardcomponent is set to accept broadcast messages from the heat pump and respond as device 0x02.</p>
+<p>The uart setup uses the TX and RX pins you wired to the RS485 module (mine are on pins 1 and 3). If you’re using the logger component in ESPHome, set its baud_rate to 0 to avoid conflicts with the UART port. The Modbus setup needs a flow_control_pin (I used pin 2, tied to DE/RE on the RS485 module) and is configured to act as a server. The hayward component is set to accept broadcast messages from the heat pump and respond as device 0x02.</p>
 
 <p>The hayward component and the modified modbus one are hosted on the <a href="https://github.com/cleontin/esphome/tree/hayward">hayward branch of my esphome fork</a>. They can be added to the configuration by using the external components configuration from the example below.</p>
 
